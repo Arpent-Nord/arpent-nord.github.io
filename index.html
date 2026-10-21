@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boîte à outils – Arpent-Nord</title>
+<meta name="description" content="Boîte à outils des arpenteurs d'Arpent-Nord : choisir un outil ou consulter sa documentation.">
+<link rel="apple-touch-icon" href="/validation-leve/apple-touch-icon.png">
+<link rel="icon" href="/validation-leve/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef1f2;--panel:#fff;--ink:#18222a;--muted:#5b6a74;--line:#d5dcdf;--accent:#0b6e69;--accent-ink:#fff;--accent-soft:#d8eeec;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;--f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body)}
+main{max-width:1000px;margin:0 auto;padding:32px 16px 48px}
+header{border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:22px}
+h1{font:700 2rem/1.1 var(--f-display);margin:0;letter-spacing:.02em;text-transform:uppercase}
+header p{margin:6px 0 0;color:var(--muted)}
+.choose{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:20px}
+.choose h2{font:700 1.15rem/1.2 var(--f-display);margin:0 0 8px}
+.choose ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.choose li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.choose li span{color:var(--muted)}
+.choose a{color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.tool{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-height:220px}
+.tool h2{font:700 1.35rem/1.15 var(--f-display);margin:0}
+.tool p{margin:0;color:var(--muted);font-size:.95rem}
+.tool .when{color:var(--ink);font-size:.92rem;flex:1}
+.tool .when b{font-weight:600}
+.tag{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{display:inline-block;border-radius:6px;padding:8px 14px;font-weight:600;font-size:.95rem;text-decoration:none;border:1px solid var(--accent)}
+.btn.go{background:var(--accent);color:var(--accent-ink)}
+.btn.doc{background:transparent;color:var(--accent)}
+.btn:hover{filter:brightness(1.08)}
+.tool.soon{opacity:.72}.tool.soon .btn{border-color:var(--line);color:var(--muted);background:var(--accent-soft)}
+.note{margin-top:22px;background:var(--accent-soft);border-radius:10px;padding:12px 16px;font-size:.92rem}
+footer{margin-top:22px;color:var(--muted);font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Boîte à outils – Arpent-Nord</h1>
+    <p>Les applications de l'équipe des arpenteurs. Vos fichiers restent sur votre appareil : rien n'est envoyé sur Internet.</p>
+  </header>
+
+  <section class="choose" aria-labelledby="chooseTitle">
+    <h2 id="chooseTitle">Quel outil prendre ?</h2>
+    <ul>
+      <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
+      <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
+    </ul>
+  </section>
+
+  <div class="grid">
+    <article class="tool" id="t-leve">
+      <span class="tag">Levé · version 8</span>
+      <h2>Validation de levé</h2>
+      <p>Lit un levé Leica (CS20, FRT), Emlid ou Trimble (rapport HTML), dessine les lignes selon les codes, signale les erreurs et les corrige en quelques clics.</p>
+      <p class="when"><b>Produit :</b> le fichier _modif.txt, un DXF et le rapport de levé, prêts à envoyer au dessin.</p>
+      <div class="actions">
+        <a class="btn go" href="/validation-leve/">Ouvrir l'outil</a>
+        <a class="btn doc" href="/validation-leve/guide.html">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-impl">
+      <span class="tag">Implantation</span>
+      <h2>Contrôle d'implantation</h2>
+      <p>Compare les points levés au plan DXF, calcule les écarts au coin ou perpendiculaires à la ligne, et les rattache aux axes du bâtiment.</p>
+      <p class="when"><b>Produit :</b> un rapport de contrôle imprimable (PDF) et un CSV pour Excel.</p>
+      <div class="actions">
+        <a class="btn go" href="/controle-implantation-app/">Ouvrir l'outil</a>
+        <a class="btn doc" href="/controle-implantation-app/guide.html">Documentation</a>
+      </div>
+    </article>
+  </div>
+
+  <p class="note"><b>Astuce téléphone :</b> ouvrez cette page, puis « Ajouter à l'écran d'accueil ». Tous les outils sont accessibles à partir de cette seule icône.</p>
+  <footer>Arpent-Nord · Une question sur un outil : consultez sa documentation, puis votre responsable de bureau.</footer>
+</main>
+</body>
+</html>
