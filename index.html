@@ -57,6 +57,9 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     <ul>
       <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
       <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
+      <li><b>Je cherche un code (Pcode) ArpentNord au terrain</b> <span>→</span> <a href="#t-pcodes">Recherche de codes</a></li>
+      <li><b>J'ai un levé de voie au chariot GEDO à rapporter</b> <span>→</span> <a href="#t-gedo">GEDO REC – rapport de voie</a></li>
+      <li><b>Je dois accepter ou refuser la coulée d'un nez de quai</b> <span>→</span> <a href="#t-quai">Vérification nez de quai</a></li>
     </ul>
   </section>
 
@@ -80,6 +83,39 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <div class="actions">
         <a class="btn go" href="/controle-implantation-app/">Ouvrir l'outil</a>
         <a class="btn doc" href="/controle-implantation-app/guide.html">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-pcodes">
+      <span class="tag">Codes · APP-PCodes</span>
+      <h2>Recherche de codes</h2>
+      <p>Trouve rapidement un Pcode ArpentNord sur le téléphone : tapez un chiffre (4, 41, 415) ou un mot (excavation, bordure).</p>
+      <p class="when"><b>Produit :</b> le numéro de code et sa description, à inscrire au carnet.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-PCodes/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-PCodes#readme">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-gedo">
+      <span class="tag">Voie ferrée · APP-Gedo-Rec</span>
+      <h2>GEDO REC – rapport de voie</h2>
+      <p>Calcule les écarts d'un levé de voie au chariot Trimble GEDO (fichiers .sie, carnet .xml) : plan, nivellement, dévers, écartement et taux de variation selon les tolérances.</p>
+      <p class="when"><b>Produit :</b> un rapport de conformité PDF et un tableau Excel.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Gedo-Rec/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-Gedo-Rec#readme">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-quai">
+      <span class="tag">Voie ferrée · APP-Verification-Nez-de-Quai</span>
+      <h2>Vérification nez de quai</h2>
+      <p>Compare le coffrage du nez de quai à l'alignement de la voie et au TQC du rail intérieur (rapport FRT + alignements .sie) pour accepter ou refuser la coulée.</p>
+      <p class="when"><b>Produit :</b> le verdict COULÉE ACCEPTÉE / REFUSÉE, l'Excel cumulatif à jour et le courriel de transmission.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Verification-Nez-de-Quai/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-Verification-Nez-de-Quai#readme">Documentation</a>
       </div>
     </article>
   </div>
