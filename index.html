@@ -83,6 +83,7 @@ td.wrap{white-space:normal;min-width:180px}
 .msg.bad{background:var(--bad-soft);color:var(--bad)}
 .msg.ok{background:var(--ok-soft);color:var(--ok)}
 .empty{padding:22px;text-align:center;color:var(--muted)}
+.corr{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--warn-soft)}
 .galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
 .galerie figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
 .galerie img{display:block;width:100%;height:150px;object-fit:cover}
@@ -246,7 +247,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.6 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.7 (2026-10-23).</footer>
 </main>
 
 <script>
@@ -281,7 +282,7 @@ const ARBO = ["00_LEVES_A_TRAITER","01_LEVES","01_LEVES/00_TERRAINS","01_LEVES/0
  "09_DIVERS/01_RAPPORT_AUTOMATISE",
  "10_ARCHIVES/01_DOCUMENTS","10_ARCHIVES/02_IMPLANTATION","10_ARCHIVES/03_PLANS","10_ARCHIVES/04_PRODUCTION","10_ARCHIVES/05_LIVRABLES","10_ARCHIVES/06_EXCEL",
  "11_ADMIN"];
-const IDX_COLS = ["Statut","NomFichier","Date_Leve","Secteur","Type","NAT","Nature","SS","Arpenteur","Remarques","Photos","Carnet","Version_modifiee","Instrument","Autres_fichiers","Dossier","Chemin_Leve","Chemin_Brutes","Chemin_Photos","Depose_par","Date_Depot","Date_Repartition","Traite_par","Date_Traitement","Dessin","Mis_dans_DWG","Verifie","Validation"];
+const IDX_COLS = ["Statut","NomFichier","Nom_terrain","Date_Leve","Secteur","Type","NAT","Nature","SS","Arpenteur","Remarques","Photos","Carnet","Version_modifiee","Instrument","Autres_fichiers","Dossier","Chemin_Leve","Chemin_Brutes","Chemin_Photos","Depose_par","Date_Depot","Date_Repartition","Traite_par","Date_Traitement","Dessin","Mis_dans_DWG","Verifie","Validation"];
 
 /* ===== État ===== */
 let root = null;            // handle de 01_ACTIFS
@@ -634,7 +635,7 @@ let lots = [];
 function buildLots(){
   const prev = Object.fromEntries(lots.map(l => [l.key, l]));
   const mk = (key, nom, leveNom, groupe) => { const pr = leveNom ? parseLeveFichier(leveNom) : null; const c = pr && contratParSect(pr.sect);
-    return {key, nom, groupe, leveNom, parse:pr, contrat: prev[key]?.contrat ?? (c ? c.nom : ""), remarque: prev[key]?.remarque ?? "", instrument: prev[key]?.instrument ?? ""}; };
+    return {key, nom, groupe, leveNom, parse:pr, contrat: prev[key]?.contrat ?? (c ? c.nom : ""), remarque: prev[key]?.remarque ?? "", instrument: prev[key]?.instrument ?? "", corr: prev[key]?.corr ?? "", motif: prev[key]?.motif ?? ""}; };
   lots = [];
   // 1. Dossiers glissés : un dossier = un lot, nommé comme le dossier
   for (const g of [...new Set(pending.filter(p => p.groupe).map(p => p.groupe))]){
@@ -660,6 +661,14 @@ function buildLots(){
   }
 }
 const membres = l => pending.filter(p => p.lot === l.key);
+function corrMessage(l){
+  if (!l.corr) return `<span class="muted">Corrigez le nom, ou inscrivez un motif pour déposer tel quel.</span>`;
+  if (l.corr.length !== 16) return `<span style="color:var(--warn)">${l.corr.length} caractère(s) sur 16</span>`;
+  const pc = parseLeve(l.corr + ".txt");
+  return pc.ok ? `<span style="color:var(--ok)">✓ Nom conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${ARPENTEURS[pc.ss] ? " · " + esc(ARPENTEURS[pc.ss]) : ""}</span>`
+    : `<span style="color:var(--warn)">${pc.erreurs.map(esc).join(" · ")}</span>`;
+}
+const corrValide = l => l.corr && l.corr.length === 16 && parseLeve(l.corr + ".txt").ok;
 function renderPending(){
   const box = $("#lotsPreview");
   $("#depotActions").hidden = !pending.length;
@@ -676,6 +685,14 @@ function renderPending(){
       <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>${etat}</div>
       ${pr ? `<div class="chips">${pr.date?`<span class="chip">${pr.date}</span>`:""}${pr.sect?`<span class="chip">Secteur ${esc(pr.sect)}</span>`:""}${TYPES[pr.typeNum]?`<span class="chip">${TYPES[pr.typeNum]}</span>`:""}${NAT[pr.nat]?`<span class="chip">${esc(pr.nat)} – ${esc(NAT[pr.nat])}</span>`:""}${ARPENTEURS[pr.ss]?`<span class="chip">${esc(ARPENTEURS[pr.ss])}</span>`:""}${modif?`<span class="chip">Version _MODIF incluse</span>`:""}</div>` : ""}
       ${pr && pr.erreurs.length ? `<ul class="err">${pr.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+      ${pr && !pr.ok && l.leveNom ? `<div class="corr">
+        <div class="row" style="align-items:flex-start">
+          <div class="field"><label>Nom corrigé du fichier de levé</label><input data-corr="${esc(l.key)}" value="${esc(l.corr)}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
+          <div class="field" style="flex:1;min-width:220px"><label>ou motif si le nom ne peut pas être corrigé</label><input data-motif="${esc(l.key)}" value="${esc(l.motif)}" placeholder="Ex. code de nature à créer, à valider avec le calculateur"></div>
+        </div>
+        <p class="small" style="margin:4px 0 0" data-corrmsg="${esc(l.key)}">${corrMessage(l)}</p>
+        <p class="small muted" style="margin:2px 0 0">Seul le fichier d'exportation (.txt et sa version _MODIF) est renommé, pour Civil 3D. Les données brutes gardent le nom créé au terrain, et le nom d'origine reste inscrit à l'index.</p>
+      </div>` : ""}
       <div class="row" style="margin-top:8px">
         <div class="field"><label>Contrat</label><select data-lotc="${esc(l.key)}">${optsC(l.contrat)}</select></div>
         <div class="field" style="flex:1;min-width:220px"><label>Remarque pour le calculateur</label><input data-lotr="${esc(l.key)}" value="${esc(l.remarque)}" placeholder="Ex. pile de réserve MG-112 km 490"></div>
@@ -692,6 +709,13 @@ function renderPending(){
     box.insertAdjacentHTML("beforeend", `<div class="lot"><h3>Rattacher les photos et documents</h3>${libres.map(p => `<div class="row small" style="margin-top:6px;align-items:center"><span style="min-width:220px">${esc(p.file.name)}</span><select data-att="${pending.indexOf(p)}">${lots.map(l => `<option value="${esc(l.key)}" ${p.lot===l.key?"selected":""}>${esc(l.nom)}</option>`).join("")}</select></div>`).join("")}</div>`);
   }
   box.querySelectorAll("[data-lotc]").forEach(s => s.onchange = () => { lots.find(l => l.key === s.dataset.lotc).contrat = s.value; });
+  box.querySelectorAll("[data-corr]").forEach(s => s.oninput = () => {
+    const l = lots.find(x => x.key === s.dataset.corr); s.value = s.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); l.corr = s.value;
+    const pc = l.corr.length === 16 ? parseLeve(l.corr + ".txt") : null;
+    if (pc && pc.ok && !l.contrat){ l.contrat = contratParSect(pc.sect)?.nom || ""; const sel = box.querySelector(`[data-lotc="${CSS.escape(l.key)}"]`); if (sel) sel.value = l.contrat; }
+    box.querySelector(`[data-corrmsg="${CSS.escape(l.key)}"]`).innerHTML = corrMessage(l);
+  });
+  box.querySelectorAll("[data-motif]").forEach(s => s.oninput = () => { lots.find(l => l.key === s.dataset.motif).motif = s.value; });
   box.querySelectorAll("[data-loti]").forEach(s => s.onchange = () => { lots.find(l => l.key === s.dataset.loti).instrument = s.value; });
   box.querySelectorAll("[data-lotr]").forEach(s => s.oninput = () => { lots.find(l => l.key === s.dataset.lotr).remarque = s.value; });
   box.querySelectorAll("[data-att]").forEach(s => s.onchange = () => { pending[+s.dataset.att].lot = s.value; renderPending(); });
@@ -700,6 +724,8 @@ async function deposer(){
   if (!root) return alert("Choisissez d'abord le dossier des contrats.");
   const qui = $("#deposant").value; if (!qui) return alert("Indiquez qui dépose les fichiers.");
   localStorage.setItem("an.deposant", qui);
+  const aCorriger = lots.filter(l => l.parse && !l.parse.ok && l.leveNom && !corrValide(l) && !l.motif.trim());
+  if (aCorriger.length) return alert(`Nom de levé non conforme : corrigez-le, ou inscrivez un motif pour le déposer tel quel.\n\n${aCorriger.map(l => l.leveNom).join("\n")}`);
   const sansInstr = lots.filter(l => l.demander && !l.instrument);
   if (sansInstr.length) return alert(`Précisez la méthode dominante (Conventionnel ou GNSS) pour : ${sansInstr.map(l => l.nom).join(", ")}`);
   const manque = lots.filter(l => !l.contrat);
@@ -709,18 +735,25 @@ async function deposer(){
   const faits = [];
   for (const l of lots){
     try {
-      if (await exists(depot, l.nom)){ log("#depotLog", `Refusé : ${l.nom} est déjà dans la boîte (doublon).`); continue; }
-      const d = await depot.getDirectoryHandle(l.nom, {create:true});
+      const corrige = l.parse && !l.parse.ok && corrValide(l);
+      const nomLot = corrige ? l.corr : l.nom;
+      const origBase = l.leveNom ? base(l.leveNom).toUpperCase() : null;
+      // Renomme uniquement le fichier d'exportation et ses variantes (_MODIF) au premier niveau; les données brutes gardent leur nom
+      const nouveauNom = p => { if (!corrige || p.rel.includes("/") || !isLeve(p.file.name)) return p.rel;
+        const b = base(p.file.name).toUpperCase(); return b.startsWith(origBase) ? l.corr + base(p.file.name).slice(origBase.length) + ext(p.file.name) : p.rel; };
+      if (await exists(depot, nomLot)){ log("#depotLog", `Refusé : ${nomLot} est déjà dans la boîte (doublon).`); continue; }
+      const d = await depot.getDirectoryHandle(nomLot, {create:true});
       const ms = membres(l);
       for (const p of ms){
-        const parts = p.rel.split("/");
+        const parts = nouveauNom(p).split("/");
         const sd = await dir(d, parts.slice(0,-1), true);
         const w = await (await sd.getFileHandle(parts.at(-1), {create:true})).createWritable(); await w.write(p.file); await w.close();
       }
-      const meta = {lot:l.nom, contrat:l.contrat, leve: l.leveNom, fichiers: ms.map(p => p.rel),
-        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Nom conforme" : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
+      const leveFinal = l.leveNom ? (corrige ? l.corr + ext(l.leveNom) : l.leveNom) : null;
+      const meta = {lot:nomLot, contrat:l.contrat, leve: leveFinal, nom_terrain: corrige ? l.leveNom : null, motif: (!corrige && l.parse && !l.parse.ok) ? l.motif.trim() : "", fichiers: ms.map(p => nouveauNom(p)),
+        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Nom conforme" : corrige ? `Nom corrigé au dépôt (terrain : ${l.leveNom})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
       await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
-      log("#depotLog", `Déposé : ${l.nom} (${ms.length} fichier(s))${l.contrat ? " → " + l.contrat : ""}`);
+      log("#depotLog", `Déposé : ${nomLot}${corrige ? ` (renommé, terrain : ${l.leveNom})` : ""} – ${ms.length} fichier(s)${l.contrat ? " → " + l.contrat : ""}`);
       await appendJournal("Dépôt", `${l.nom} – ${ms.length} fichier(s) – ${l.contrat || "contrat à choisir"}`);
       faits.push(l.key);
     } catch(e){ log("#depotLog", `Échec pour ${l.nom} : ${e.message}`); }
@@ -776,7 +809,8 @@ function renderBoite(){
       ${ls.map(l => `<div class="lot">
         <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>
           <span>${l.date > vu ? `<span class="state new">Nouveau</span> ` : ""}${!l.parse ? `<span class="state warn">Documents</span>` : l.parse.ok ? `<span class="state ok">Nom conforme</span>` : `<span class="state warn">À vérifier</span>`}</span></div>
-        <p class="small muted" style="margin:4px 0">${esc(l.date)} · ${esc(l.meta?.depose_par || "déposé directement dans le dossier")} · ${l.fichiers.length} fichier(s)${l.meta?.remarque ? ` · « ${esc(l.meta.remarque)} »` : ""}</p>
+        <p class="small muted" style="margin:4px 0">${esc(l.date)} · ${esc(l.meta?.depose_par || "déposé directement dans le dossier")} · ${l.fichiers.length} fichier(s)${l.meta?.remarque ? ` · « ${esc(l.meta.remarque)} »` : ""}${l.meta?.nom_terrain ? ` · renommé au dépôt (terrain : ${esc(l.meta.nom_terrain)})` : ""}</p>
+        ${l.meta?.motif ? `<p class="small" style="margin:4px 0;color:var(--warn)">Motif de l'arpenteur : ${esc(l.meta.motif)}</p>` : ""}
         ${l.parse && !l.parse.ok ? `<ul class="err">${l.parse.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
         <div class="row" style="margin-top:6px"><select data-bc="${esc(l.nom)}">${optsC(l.contrat)}</select>
           <button class="btn small go" data-rep="${esc(l.nom)}" ${l.contrat ? "" : "disabled"}>Répartir</button></div>
@@ -812,13 +846,13 @@ async function repartir(liste){
         const p = l.parse;
         rows.push({
           Statut: !p || p.ok ? "À traiter" : "À vérifier",
-          NomFichier: l.leve || "(documents)", Date_Leve: p?.date || "", Secteur: p?.sect || "",
+          NomFichier: l.leve || "(documents)", Nom_terrain: l.meta?.nom_terrain || "", Date_Leve: p?.date || "", Secteur: p?.sect || "",
           Type: p ? (TYPES[p.typeNum] || p.typeNum || "") : "Documents terrain", NAT: p?.nat || "", Nature: p ? (NAT[p.nat] || "") : "",
           SS: p?.ss || "", Arpenteur: p ? (ARPENTEURS[p.ss] || "") : "", Remarques: l.meta?.remarque || "",
           Photos: photos.length ? `${photos.length} photo(s)` : "", Carnet: carnets.join(", "), Version_modifiee: modif, Instrument: l.meta?.instrument || "", Autres_fichiers: autres.join(", "),
           Dossier: `00_LEVES_A_TRAITER\\${nomLot}`, Depose_par: l.meta?.depose_par || "", Date_Depot: l.date, Date_Repartition: nowIso(),
           Traite_par:"", Date_Traitement:"", Dessin:"", Mis_dans_DWG:"", Verifie:"",
-          Validation: !p ? "Documents sans levé" : p.ok ? "Nom conforme" : p.erreurs.join(" | ")
+          Validation: !p ? "Documents sans levé" : p.ok ? (l.meta?.nom_terrain ? `Nom corrigé au dépôt (terrain : ${l.meta.nom_terrain})` : "Nom conforme") : p.erreurs.join(" | ") + (l.meta?.motif ? ` | Motif de l'arpenteur : ${l.meta.motif}` : "")
         });
         ok.push(l);
       } catch(e){ log("#boiteLog", `Échec pour ${l.nom} : ${e.message}`); }
@@ -850,7 +884,7 @@ function renderIndex(){
   const f = $("#idxFiltre").value;
   const vis = idxRows.map((r,i) => [r,i]).filter(([r]) => !f || r.Statut === f);
   if (!idxRows.length){ $("#idxTable").innerHTML = `<p class="empty">L'index est vide. Les levés y apparaissent dès qu'ils sont répartis depuis la boîte de dépôt.</p>`; return; }
-  const cols = ["NomFichier","Date_Leve","Secteur","Type","Nature","Arpenteur","Instrument","Remarques","Carnet","Version_modifiee","Depose_par","Date_Repartition","Traite_par","Dessin","Mis_dans_DWG","Validation"];
+  const cols = ["NomFichier","Nom_terrain","Date_Leve","Secteur","Type","Nature","Arpenteur","Instrument","Remarques","Carnet","Version_modifiee","Depose_par","Date_Repartition","Traite_par","Dessin","Mis_dans_DWG","Validation"];
   const cls = s => s === "Traité" ? "ok" : s === "À vérifier" ? "warn" : "new";
   const enTransit = r => (r.Dossier || "").startsWith("00_LEVES_A_TRAITER");
   const classable = r => enTransit(r) && (r.NomFichier === "(documents)" || parseLeveFichier(r.NomFichier).ok);
