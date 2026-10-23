@@ -88,6 +88,12 @@ td.wrap{white-space:normal;min-width:180px}
 .galerie img{display:block;width:100%;height:150px;object-fit:cover}
 .galerie figcaption{font-size:.78rem;padding:4px 6px;color:var(--muted);word-break:break-all}
 .galerie .noprev{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;text-align:center;padding:8px}
+.secthead,.sectrow{display:grid;grid-template-columns:110px 1fr 36px;gap:8px;align-items:center}
+.secthead{margin:6px 0 2px}
+.sectrow{margin-top:4px}
+.sectrow input.sc{text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}
+.sectrow input.bad{border-color:var(--bad);background:var(--bad-soft)}
+.sectrow button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;height:32px;cursor:pointer}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 footer{margin-top:22px;color:var(--muted);font-size:.85rem}
@@ -202,8 +208,15 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
         <label style="font-weight:500"><input type="radio" name="aMode" value="contrat" checked> Numéro de contrat (<span id="aDefaut">A000</span>)</label>
         <label style="font-weight:500"><input type="radio" name="aMode" value="wbs"> WBS ou secteurs du client</label>
       </div>
-      <div class="field" style="margin-top:8px"><label for="aSecteurs" id="aSectLabel">Secteurs additionnels (facultatif)</label>
-        <textarea id="aSecteurs" rows="4" placeholder="Un secteur par ligne : code de 4 caractères, puis sa description&#10;LOT4 Lot 4&#10;LOT5 Lot 5"></textarea></div>
+      <div style="margin-top:8px"><label id="aSectLabel">Secteurs additionnels (facultatif)</label>
+        <div class="secthead small muted"><span>Code (4 car.)</span><span>Description</span></div>
+        <div id="aRows"></div>
+        <div class="row" style="margin-top:6px"><button type="button" class="btn small" id="btnAjSect">+ Ajouter un secteur</button><button type="button" class="btn small" id="btnColler">Coller une liste depuis Excel</button></div>
+        <div id="aCollerBox" hidden style="margin-top:8px">
+          <textarea id="aColler" rows="5" placeholder="Copiez deux colonnes dans Excel (code, description) et collez-les ici.&#10;LOT4	Stationnement des débardeurs&#10;LOT5	Quai nord"></textarea>
+          <div class="row" style="margin-top:6px"><button type="button" class="btn small go" id="btnImporter">Ajouter ces secteurs</button><span class="small muted">Séparateurs acceptés : tabulation (Excel), virgule, point-virgule ou tiret.</span></div>
+        </div>
+      </div>
       <p class="small muted" id="aAide" style="margin:6px 0 0"></p>
     </div>
     <div class="row" style="margin-top:12px"><button class="btn go" id="btnActiver">Activer le contrat</button></div>
@@ -233,7 +246,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.5 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.6 (2026-10-23).</footer>
 </main>
 
 <script>
@@ -488,7 +501,8 @@ async function chargerActivation(){
   $("#aDefaut").textContent = sectDefaut(c.numero) || "—";
   const i = c.info || {};
   document.querySelector(`input[name=aMode][value=${i.mode_secteur === "wbs" ? "wbs" : "contrat"}]`).checked = true;
-  $("#aSecteurs").value = (i.secteurs || []).map(x => typeof x === "string" ? x : `${x.code}${x.description ? " " + x.description : ""}`).join("\n");
+  $("#aRows").innerHTML = ""; (i.secteurs || []).forEach(x => ajouterLigne(typeof x === "string" ? x : x.code, typeof x === "string" ? "" : x.description));
+  if (!$("#aRows").children.length) ajouterLigne();
   majMode();
   $("#aArbo").innerHTML = `<p class="small muted">Vérification de l'arborescence…</p>`;
   arboCourante = await verifierArbo(c);
@@ -508,14 +522,35 @@ function majMode(){
     ? "Les fichiers de ce contrat utilisent un code du client à la place du numéro de contrat, ex. 260803LOT41STA63 → secteur LOT4. Seuls les secteurs déclarés ici sont reconnus."
     : `Les fichiers portent le code du numéro de contrat, ex. AAMMJJ${c ? sectDefaut(c.numero) : "A000"}#NATSS. Ajoutez ici d'autres codes au besoin (WBS, chef-arpenteur).`;
 }
+function ajouterLigne(code = "", description = ""){
+  const r = document.createElement("div"); r.className = "sectrow";
+  r.innerHTML = `<input class="sc" maxlength="4" placeholder="LOT4" aria-label="Code du secteur"><input class="sd" placeholder="Stationnement des débardeurs" aria-label="Description du secteur"><button type="button" title="Retirer" aria-label="Retirer">✕</button>`;
+  const sc = r.querySelector(".sc"); sc.value = code; r.querySelector(".sd").value = description;
+  const valider = () => { sc.value = sc.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); sc.classList.toggle("bad", sc.value !== "" && sc.value.length !== 4); };
+  sc.oninput = valider; valider();
+  if (code && code.replace(/[^A-Za-z0-9]/g,"").length !== 4){ sc.value = code.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8); sc.classList.add("bad"); sc.removeAttribute("maxlength"); }
+  r.querySelector("button").onclick = () => { r.remove(); if (!$("#aRows").children.length) ajouterLigne(); };
+  $("#aRows").append(r);
+}
+// Lit une liste collée (Excel : tabulation; sinon virgule, point-virgule ou tiret)
+function importerListe(texte){
+  const vides = [...$("#aRows").children].filter(r => !r.querySelector(".sc").value && !r.querySelector(".sd").value); vides.forEach(r => r.remove());
+  let n = 0;
+  for (const l of texte.split(/\r?\n/).map(x => x.trim()).filter(Boolean)){
+    const m = l.match(/^([^\t,;]+?)\s*(?:\t|,|;|\s[-–=:]\s|\s+)\s*(.*)$/) || [null, l, ""];
+    ajouterLigne(m[1].trim(), (m[2] || "").replace(/^[\t,;\s]+/, "").trim()); n++;
+  }
+  if (!$("#aRows").children.length) ajouterLigne();
+  return n;
+}
 function lireSecteurs(){
-  const lignes = $("#aSecteurs").value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   const ok = [], erreurs = [];
-  for (const l of lignes){
-    const m = l.match(/^(\S+)\s*[-–:=]?\s*(.*)$/); const code = m[1].toUpperCase();
-    if (!/^[A-Z0-9]{4}$/.test(code)) erreurs.push(`« ${m[1]} » : ${code.length} caractère(s), il en faut exactement 4`);
+  for (const r of $("#aRows").children){
+    const code = r.querySelector(".sc").value.trim().toUpperCase(), description = r.querySelector(".sd").value.trim();
+    if (!code && !description) continue;
+    if (!/^[A-Z0-9]{4}$/.test(code)) erreurs.push(`« ${code || "(vide)"} » : ${code.length} caractère(s), il en faut exactement 4 (lettres ou chiffres)`);
     else if (ok.some(x => x.code === code)) erreurs.push(`« ${code} » est en double`);
-    else ok.push({code, description: m[2] || ""});
+    else ok.push({code, description});
   }
   return {ok, erreurs};
 }
@@ -998,6 +1033,9 @@ $("#btnBilan").onclick = lancerBilan;
 $("#aContrat").onchange = chargerActivation;
 document.querySelectorAll("input[name=aMode]").forEach(r => r.onchange = majMode);
 $("#btnActiver").onclick = activer;
+$("#btnAjSect").onclick = () => ajouterLigne();
+$("#btnColler").onclick = () => { $("#aCollerBox").hidden = !$("#aCollerBox").hidden; if (!$("#aCollerBox").hidden) $("#aColler").focus(); };
+$("#btnImporter").onclick = () => { const n = importerListe($("#aColler").value); $("#aColler").value = ""; $("#aCollerBox").hidden = true; log("#contratLog", `${n} secteur(s) ajouté(s) à la liste. Vérifiez-les, puis cliquez sur Activer le contrat.`); };
 $("#btnBilanCopier").onclick = copierBilan;
 $("#racine").value = localStorage.getItem("an.racine") || "";
 $("#racine").onchange = e => localStorage.setItem("an.racine", e.target.value.trim());
