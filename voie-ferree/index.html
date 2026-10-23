@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Outils voie ferrée – Arpent-Nord</title>
+<meta name="description" content="Boîte à outils des arpenteurs d'Arpent-Nord : choisir un outil ou consulter sa documentation.">
+<link rel="apple-touch-icon" href="/validation-leve/apple-touch-icon.png">
+<link rel="icon" href="/validation-leve/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{--bg:#eef1f2;--panel:#fff;--ink:#18222a;--muted:#5b6a74;--line:#d5dcdf;--accent:#0b6e69;--accent-ink:#fff;--accent-soft:#d8eeec;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;--f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body)}
+main{max-width:1000px;margin:0 auto;padding:32px 16px 48px}
+header{border-bottom:3px solid var(--accent);padding-bottom:14px;margin-bottom:22px}
+h1{font:700 2rem/1.1 var(--f-display);margin:0;letter-spacing:.02em;text-transform:uppercase}
+header p{margin:6px 0 0;color:var(--muted)}
+.choose{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;margin-bottom:20px}
+.choose h2{font:700 1.15rem/1.2 var(--f-display);margin:0 0 8px}
+.choose ul{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+.choose li{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.choose li span{color:var(--muted)}
+.choose a{color:var(--accent);font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.tool{display:flex;flex-direction:column;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:18px;min-height:220px}
+.tool h2{font:700 1.35rem/1.15 var(--f-display);margin:0}
+.tool p{margin:0;color:var(--muted);font-size:.95rem}
+.tool .when{color:var(--ink);font-size:.92rem;flex:1}
+.tool .when b{font-weight:600}
+.tag{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.btn{display:inline-block;border-radius:6px;padding:8px 14px;font-weight:600;font-size:.95rem;text-decoration:none;border:1px solid var(--accent)}
+.btn.go{background:var(--accent);color:var(--accent-ink)}
+.btn.doc{background:transparent;color:var(--accent)}
+.btn:hover{filter:brightness(1.08)}
+.tool.soon{opacity:.72}.tool.soon .btn{border-color:var(--line);color:var(--muted);background:var(--accent-soft)}
+.note{margin-top:22px;background:var(--accent-soft);border-radius:10px;padding:12px 16px;font-size:.92rem}
+footer{margin-top:22px;color:var(--muted);font-size:.85rem}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a href="/" style="font-weight:600;text-decoration:none;color:var(--accent)">‹ Boîte à outils</a>
+    <h1>Outils voie ferrée</h1>
+    <p>Outils spécialisés pour les projets ferroviaires. Vos fichiers restent sur votre appareil : rien n'est envoyé sur Internet.</p>
+  </header>
+  <div class="grid">
+
+    <article class="tool" id="t-gedo">
+      <span class="tag">Voie ferrée · APP-Gedo-Rec</span>
+      <h2>GEDO REC – rapport de voie</h2>
+      <p>Calcule les écarts d'un levé de voie au chariot Trimble GEDO (fichiers .sie, carnet .xml) : plan, nivellement, dévers, écartement et taux de variation selon les tolérances.</p>
+      <p class="when"><b>Produit :</b> un rapport de conformité PDF et un tableau Excel.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Gedo-Rec/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-Gedo-Rec#readme">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-quai">
+      <span class="tag">Voie ferrée · APP-Verification-Nez-de-Quai</span>
+      <h2>Vérification nez de quai</h2>
+      <p>Compare le coffrage du nez de quai à l'alignement de la voie et au TQC du rail intérieur (rapport FRT + alignements .sie) pour accepter ou refuser la coulée.</p>
+      <p class="when"><b>Produit :</b> le verdict COULÉE ACCEPTÉE / REFUSÉE, l'Excel cumulatif à jour et le courriel de transmission.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Verification-Nez-de-Quai/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-Verification-Nez-de-Quai#readme">Documentation</a>
+      </div>
+    </article>
+  </div>
+  <footer>Arpent-Nord · Une question sur un outil : consultez sa documentation, puis votre responsable de bureau.</footer>
+</main>
+</body>
+</html>
