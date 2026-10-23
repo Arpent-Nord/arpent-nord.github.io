@@ -83,6 +83,16 @@ td.wrap{white-space:normal;min-width:180px}
 .msg.bad{background:var(--bad-soft);color:var(--bad)}
 .msg.ok{background:var(--ok-soft);color:var(--ok)}
 .empty{padding:22px;text-align:center;color:var(--muted)}
+td.ed input,td.ed select{padding:3px 6px;font-size:.86rem}
+td.ed.modif input,td.ed.modif select{border-color:var(--accent);background:var(--accent-soft)}
+.dessin{display:inline-flex;gap:4px;align-items:center}
+.vtag{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:600;font-size:.82rem;white-space:normal}
+.vtag.ok{background:var(--ok-soft);color:var(--ok)}
+.vtag.warn{background:var(--warn-soft);color:var(--warn)}
+.legende{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.legende dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0;align-items:baseline}
+.legende dd{margin:0;color:var(--muted)}
+.state{cursor:default}
 .corr{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--warn-soft)}
 .galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
 .galerie figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
@@ -170,6 +180,15 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       </div>
     </div>
     <p class="small muted">Les lots sont regroupés par contrat selon le code de secteur du nom de fichier. « Répartir » déplace le lot dans le dossier 00_LEVES_A_TRAITER du contrat et l'inscrit à l'index avec le statut « À traiter ».</p>
+    <div class="legende small">
+      <p style="margin:0 0 6px"><b>Les étiquettes sont des indicateurs, pas des boutons.</b> Les actions sont en bas de chaque lot.</p>
+      <dl>
+        <dt><span class="state new">Nouveau</span></dt><dd>Arrivé depuis votre dernière visite. « Marquer tout comme vu » retire l'étiquette.</dd>
+        <dt><span class="state ok">Conforme</span></dt><dd>Le nom respecte AAMMJJSECT#NATSS et le secteur appartient à un contrat : le lot peut être réparti.</dd>
+        <dt><span class="state warn">À vérifier</span></dt><dd>Le nom ne respecte pas la norme; la raison est indiquée sous le lot. Utilisez <b>« Corriger le nom »</b> : seul le fichier d'exportation (.txt et _MODIF) est renommé, les données brutes gardent leur nom de terrain. Un lot réparti sans correction reste « À vérifier » à l'index.</dd>
+        <dt><span class="state warn">Documents</span></dt><dd>Lot sans fichier de levé (scans, notes, photos) : choisissez le contrat, puis répartissez.</dd>
+      </dl>
+    </div>
     <div id="boiteList"></div>
     <div class="log" id="boiteLog"></div>
   </div>
@@ -184,6 +203,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
         <div class="field"><label for="idxContrat">Contrat</label><select id="idxContrat"></select></div>
         <div class="field"><label for="idxFiltre">Statut</label>
           <select id="idxFiltre"><option value="">Tous</option><option>À traiter</option><option>À vérifier</option><option>Traité</option></select></div>
+        <button class="btn" id="btnRevalider" title="Revérifie les lignes « À vérifier » avec les tables actuelles">Revalider</button>
         <button class="btn go" id="btnIdxSave" disabled>Enregistrer les modifications</button>
       </div>
     </div>
@@ -247,7 +267,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.7 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.10 (2026-10-23).</footer>
 </main>
 
 <script>
@@ -665,7 +685,7 @@ function corrMessage(l){
   if (!l.corr) return `<span class="muted">Corrigez le nom, ou inscrivez un motif pour déposer tel quel.</span>`;
   if (l.corr.length !== 16) return `<span style="color:var(--warn)">${l.corr.length} caractère(s) sur 16</span>`;
   const pc = parseLeve(l.corr + ".txt");
-  return pc.ok ? `<span style="color:var(--ok)">✓ Nom conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${ARPENTEURS[pc.ss] ? " · " + esc(ARPENTEURS[pc.ss]) : ""}</span>`
+  return pc.ok ? `<span style="color:var(--ok)">✓ Conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${ARPENTEURS[pc.ss] ? " · " + esc(ARPENTEURS[pc.ss]) : ""}</span>`
     : `<span style="color:var(--warn)">${pc.erreurs.map(esc).join(" · ")}</span>`;
 }
 const corrValide = l => l.corr && l.corr.length === 16 && parseLeve(l.corr + ".txt").ok;
@@ -679,7 +699,7 @@ function renderPending(){
     const haut = ms.filter(p => !p.rel.includes("/")), sous = ms.length - haut.length;
     const dossiers = [...new Set(ms.filter(p => p.rel.includes("/")).map(p => p.rel.split("/")[0]))];
     const modif = haut.find(p => /_MODIF$/i.test(base(p.file.name)));
-    const etat = !l.parse ? `<span class="state warn">${l.groupe ? "Aucun levé trouvé" : "Documents sans levé"}</span>` : l.parse.ok ? `<span class="state ok">Nom conforme</span>` : `<span class="state warn">À vérifier</span>`;
+    const etat = !l.parse ? `<span class="state warn">${l.groupe ? "Aucun levé trouvé" : "Documents sans levé"}</span>` : l.parse.ok ? `<span class="state ok">Conforme</span>` : `<span class="state warn">À vérifier</span>`;
     const pr = l.parse;
     return `<div class="lot">
       <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>${etat}</div>
@@ -751,7 +771,7 @@ async function deposer(){
       }
       const leveFinal = l.leveNom ? (corrige ? l.corr + ext(l.leveNom) : l.leveNom) : null;
       const meta = {lot:nomLot, contrat:l.contrat, leve: leveFinal, nom_terrain: corrige ? l.leveNom : null, motif: (!corrige && l.parse && !l.parse.ok) ? l.motif.trim() : "", fichiers: ms.map(p => nouveauNom(p)),
-        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Nom conforme" : corrige ? `Nom corrigé au dépôt (terrain : ${l.leveNom})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
+        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Conforme" : corrige ? `Conforme – nom corrigé au dépôt (terrain : ${l.leveNom})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
       await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
       log("#depotLog", `Déposé : ${nomLot}${corrige ? ` (renommé, terrain : ${l.leveNom})` : ""} – ${ms.length} fichier(s)${l.contrat ? " → " + l.contrat : ""}`);
       await appendJournal("Dépôt", `${l.nom} – ${ms.length} fichier(s) – ${l.contrat || "contrat à choisir"}`);
@@ -808,18 +828,60 @@ function renderBoite(){
         ${k ? `<button class="btn small go" data-tout="${esc(k)}">Répartir les ${ls.length} lot(s)</button>` : ""}</div>
       ${ls.map(l => `<div class="lot">
         <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>
-          <span>${l.date > vu ? `<span class="state new">Nouveau</span> ` : ""}${!l.parse ? `<span class="state warn">Documents</span>` : l.parse.ok ? `<span class="state ok">Nom conforme</span>` : `<span class="state warn">À vérifier</span>`}</span></div>
+          <span>${l.date > vu ? `<span class="state new">Nouveau</span> ` : ""}${!l.parse ? `<span class="state warn">Documents</span>` : l.parse.ok ? `<span class="state ok">Conforme</span>` : `<span class="state warn">À vérifier</span>`}</span></div>
         <p class="small muted" style="margin:4px 0">${esc(l.date)} · ${esc(l.meta?.depose_par || "déposé directement dans le dossier")} · ${l.fichiers.length} fichier(s)${l.meta?.remarque ? ` · « ${esc(l.meta.remarque)} »` : ""}${l.meta?.nom_terrain ? ` · renommé au dépôt (terrain : ${esc(l.meta.nom_terrain)})` : ""}</p>
         ${l.meta?.motif ? `<p class="small" style="margin:4px 0;color:var(--warn)">Motif de l'arpenteur : ${esc(l.meta.motif)}</p>` : ""}
         ${l.parse && !l.parse.ok ? `<ul class="err">${l.parse.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+        ${l.parse && !l.parse.ok && l.leve ? `<div class="corr" data-corrbox="${esc(l.nom)}" hidden>
+          <div class="row" style="align-items:flex-end">
+            <div class="field"><label>Nom corrigé</label><input data-bcorr="${esc(l.nom)}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
+            <button class="btn small go" data-bapp="${esc(l.nom)}" disabled>Appliquer</button>
+          </div>
+          <p class="small" style="margin:4px 0 0" data-bmsg="${esc(l.nom)}"><span class="muted">Terrain : ${esc(l.leve)}. Seul le fichier d'exportation sera renommé.</span></p>
+        </div>` : ""}
         <div class="row" style="margin-top:6px"><select data-bc="${esc(l.nom)}">${optsC(l.contrat)}</select>
-          <button class="btn small go" data-rep="${esc(l.nom)}" ${l.contrat ? "" : "disabled"}>Répartir</button></div>
+          <button class="btn small go" data-rep="${esc(l.nom)}" ${l.contrat ? "" : "disabled"}>Répartir</button>
+          ${l.parse && !l.parse.ok && l.leve ? `<button class="btn small" data-bcor="${esc(l.nom)}">Corriger le nom</button>` : ""}</div>
       </div>`).join("")}
     </div>`;
   }).join("");
   box.querySelectorAll("[data-bc]").forEach(s => s.onchange = () => { const l = boite.find(x => x.nom === s.dataset.bc); l.contrat = s.value; renderBoite(); });
+  box.querySelectorAll("[data-bcor]").forEach(b => b.onclick = () => { const cb = box.querySelector(`[data-corrbox="${CSS.escape(b.dataset.bcor)}"]`); cb.hidden = !cb.hidden; if (!cb.hidden) cb.querySelector("input").focus(); });
+  box.querySelectorAll("[data-bcorr]").forEach(i => i.oninput = () => {
+    i.value = i.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const l = {corr: i.value}; const ok = corrValide(l);
+    box.querySelector(`[data-bmsg="${CSS.escape(i.dataset.bcorr)}"]`).innerHTML = corrMessage(l);
+    box.querySelector(`[data-bapp="${CSS.escape(i.dataset.bcorr)}"]`).disabled = !ok;
+  });
+  box.querySelectorAll("[data-bapp]").forEach(b => b.onclick = async () => { b.disabled = true; await corrigerDansBoite(boite.find(x => x.nom === b.dataset.bapp), box.querySelector(`[data-bcorr="${CSS.escape(b.dataset.bapp)}"]`).value); });
   box.querySelectorAll("[data-rep]").forEach(b => b.onclick = async () => { b.disabled = true; await repartir([boite.find(x => x.nom === b.dataset.rep)]); });
   box.querySelectorAll("[data-tout]").forEach(b => b.onclick = async () => { b.disabled = true; await repartir(boite.filter(x => x.contrat === b.dataset.tout)); });
+}
+// Correction du nom par le calculateur, dans la boîte (lots déposés directement ou non corrigés au dépôt)
+async function corrigerDansBoite(l, corr){
+  const depot = await dir(root, [DEPOT]);
+  if (await exists(depot, corr)) return alert(`Un lot nommé ${corr} est déjà dans la boîte (doublon).`);
+  const origBase = base(l.leve).toUpperCase();
+  const renomme = n => isLeve(n) && base(n).toUpperCase().startsWith(origBase) ? corr + base(n).slice(origBase.length) + ext(n) : n;
+  try {
+    const d = await depot.getDirectoryHandle(corr, {create:true});
+    if (l.dossier){
+      for await (const [n, h] of l.handle.entries()){
+        if (n === "_lot.json") continue;
+        if (h.kind === "directory") await copyDir(h, await d.getDirectoryHandle(n, {create:true}));      // données brutes : nom de terrain conservé
+        else { const w = await (await d.getFileHandle(renomme(n), {create:true})).createWritable(); await w.write(await h.getFile()); await w.close(); }
+      }
+    } else { const w = await (await d.getFileHandle(renomme(l.nom), {create:true})).createWritable(); await w.write(await l.handle.getFile()); await w.close(); }
+    const meta = {...(l.meta || {}), lot: corr, leve: corr + ext(l.leve), nom_terrain: l.meta?.nom_terrain || l.leve, contrat: l.contrat || "",
+      fichiers: l.fichiers.map(renomme), date_depot: l.meta?.date_depot || l.date, depose_par: l.meta?.depose_par || "",
+      corrige_par: localStorage.getItem("an.deposant") || "", corrige_le: nowIso(), validation: `Conforme – nom corrigé dans la boîte (terrain : ${l.meta?.nom_terrain || l.leve})`};
+    const pc = parseLeve(corr + ".txt"); if (!meta.contrat) meta.contrat = contratParSect(pc.sect)?.nom || "";
+    await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
+    await depot.removeEntry(l.nom, {recursive:true});
+    log("#boiteLog", `Corrigé : ${l.leve} → ${corr}${ext(l.leve)}`);
+    await appendJournal("Correction de nom", `${l.leve} → ${corr}${ext(l.leve)}`);
+  } catch(e){ log("#boiteLog", `Échec de la correction de ${l.nom} : ${e.message}`); }
+  await scanBoite();
 }
 async function repartir(liste){
   const depot = await dir(root, [DEPOT]);
@@ -852,7 +914,7 @@ async function repartir(liste){
           Photos: photos.length ? `${photos.length} photo(s)` : "", Carnet: carnets.join(", "), Version_modifiee: modif, Instrument: l.meta?.instrument || "", Autres_fichiers: autres.join(", "),
           Dossier: `00_LEVES_A_TRAITER\\${nomLot}`, Depose_par: l.meta?.depose_par || "", Date_Depot: l.date, Date_Repartition: nowIso(),
           Traite_par:"", Date_Traitement:"", Dessin:"", Mis_dans_DWG:"", Verifie:"",
-          Validation: !p ? "Documents sans levé" : p.ok ? (l.meta?.nom_terrain ? `Nom corrigé au dépôt (terrain : ${l.meta.nom_terrain})` : "Nom conforme") : p.erreurs.join(" | ") + (l.meta?.motif ? ` | Motif de l'arpenteur : ${l.meta.motif}` : "")
+          Validation: !p ? "Documents sans levé" : p.ok ? (l.meta?.nom_terrain ? (l.meta.validation && l.meta.validation.startsWith("Conforme") ? l.meta.validation : `Conforme – nom corrigé au dépôt (terrain : ${l.meta.nom_terrain})`) : "Conforme") : p.erreurs.join(" | ") + (l.meta?.motif ? ` | Motif de l'arpenteur : ${l.meta.motif}` : "")
         });
         ok.push(l);
       } catch(e){ log("#boiteLog", `Échec pour ${l.nom} : ${e.message}`); }
@@ -872,6 +934,7 @@ async function repartir(liste){
 
 /* ===== Index ===== */
 async function loadIndex(){
+  if (idxDirty && !confirm("Des modifications de l'index ne sont pas enregistrées. Les abandonner ?")){ $("#idxContrat").value = idxContrat?.nom || ""; return; }
   const nom = $("#idxContrat").value; idxContrat = contrats.find(c => c.nom === nom);
   idxDirty = false; $("#btnIdxSave").disabled = true;
   if (!idxContrat){ $("#idxTable").innerHTML = `<p class="empty">Aucun contrat dans ce dossier. Créez-en un dans l'onglet Contrats.</p>`; $("#idxPath").textContent = ""; return; }
@@ -884,7 +947,7 @@ function renderIndex(){
   const f = $("#idxFiltre").value;
   const vis = idxRows.map((r,i) => [r,i]).filter(([r]) => !f || r.Statut === f);
   if (!idxRows.length){ $("#idxTable").innerHTML = `<p class="empty">L'index est vide. Les levés y apparaissent dès qu'ils sont répartis depuis la boîte de dépôt.</p>`; return; }
-  const cols = ["NomFichier","Nom_terrain","Date_Leve","Secteur","Type","Nature","Arpenteur","Instrument","Remarques","Carnet","Version_modifiee","Depose_par","Date_Repartition","Traite_par","Dessin","Mis_dans_DWG","Validation"];
+  const cols = ["NomFichier","Remarques","Traite_par","Mis_dans_DWG","Dessin","Verifie","Instrument","Nom_terrain","Date_Leve","Secteur","Type","Nature","Arpenteur","Carnet","Version_modifiee","Depose_par","Date_Repartition","Date_Traitement","Validation"];
   const cls = s => s === "Traité" ? "ok" : s === "À vérifier" ? "warn" : "new";
   const enTransit = r => (r.Dossier || "").startsWith("00_LEVES_A_TRAITER");
   const classable = r => enTransit(r) && (r.NomFichier === "(documents)" || parseLeveFichier(r.NomFichier).ok);
@@ -893,9 +956,19 @@ function renderIndex(){
    ${vis.map(([r,i]) => `<tr><td><select data-st="${i}" class="state ${cls(r.Statut)}">${["À traiter","À vérifier","Traité"].map(s => `<option ${s===r.Statut?"selected":""}>${s}</option>`).join("")}</select></td>
      <td>${enTransit(r) ? (classable(r) ? `<button class="btn small go" data-cl="${i}">Classer</button>` : `<span class="state warn" title="Corrigez le nom du fichier avant de classer">Nom à corriger</span>`) : `<span class="state ok">Classé</span>`}</td>
      <td>${(r.Chemin_Photos || (enTransit(r) && r.Photos)) ? `<button class="btn small" data-ph="${i}">${esc(r.Photos || "Photos")}</button> ` : ""}${r.Chemin_Brutes ? `<button class="btn small" data-cp="${i}:Chemin_Brutes" title="${esc(r.Chemin_Brutes)}">Brutes</button> ` : ""}${r.Chemin_Leve ? `<button class="btn small" data-cp="${i}:Chemin_Leve" title="${esc(r.Chemin_Leve)}">Levé</button>` : ""}</td>
-     ${cols.map(c => `<td class="${["Remarques","Validation"].includes(c)?"wrap":""}">${esc(r[c])}</td>`).join("")}</tr>`).join("")}
-   </tbody></table></div>`;
+     ${cols.map(c => c === "Validation" ? `<td class="wrap">${validationTag(r)}</td>` : EDIT[c] ? `<td class="ed">${champ(i, c, r[c])}</td>` : `<td>${esc(r[c])}</td>`).join("")}</tr>`).join("")}
+   </tbody></table></div>
+   <datalist id="dlArp">${Object.values(ARPENTEURS).map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+   <p class="small muted" style="margin:6px 0 0">Colonnes modifiables : Remarques, Traité par, Mis dans DWG, Dessin, Vérifié et Instrument. Les autres sont la trace du dépôt et ne se modifient pas ici. N'oubliez pas « Enregistrer les modifications ».</p>`;
   const t = $("#idxTable");
+  t.querySelectorAll("[data-ed]").forEach(el => el.onchange = () => {
+    const [i, c] = el.dataset.ed.split(":"); const r = idxRows[+i];
+    r[c] = el.value.trim();
+    if (c === "Dessin" && r.Dessin && !r.Mis_dans_DWG){ r.Mis_dans_DWG = "Oui"; const s2 = t.querySelector(`[data-ed="${i}:Mis_dans_DWG"]`); if (s2) s2.value = "Oui"; }
+    if (c === "Traite_par" && r.Traite_par && !r.Date_Traitement) r.Date_Traitement = nowIso();
+    idxDirty = true; $("#btnIdxSave").disabled = false; el.closest("td").classList.add("modif");
+  });
+  t.querySelectorAll("[data-cpd]").forEach(b => b.onclick = () => { const v = idxRows[+b.dataset.cpd].Dessin; if (!v) return; if (/^([A-Za-z]:|\\\\)/.test(v)) navigator.clipboard.writeText(v).then(() => { showMsg(`Chemin copié : ${esc(v)}`, "ok"); setTimeout(() => showMsg(""), 4000); }); else copierChemin(v); });
   t.querySelectorAll("[data-st]").forEach(s => s.onchange = () => {
     const r = idxRows[+s.dataset.st]; r.Statut = s.value;
     if (s.value === "Traité"){ r.Traite_par = localStorage.getItem("an.deposant") || r.Traite_par; r.Date_Traitement = nowIso(); }
@@ -904,6 +977,41 @@ function renderIndex(){
   t.querySelectorAll("[data-cl]").forEach(b => b.onclick = async () => { b.disabled = true; await classer(+b.dataset.cl); });
   t.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => voirPhotos(idxRows[+b.dataset.ph]));
   t.querySelectorAll("[data-cp]").forEach(b => b.onclick = () => { const [i,c] = b.dataset.cp.split(":"); copierChemin(idxRows[+i][c]); });
+}
+
+// Champs modifiables de l'index
+const EDIT = {Remarques:"texte", Traite_par:"arpenteur", Mis_dans_DWG:"oui", Dessin:"dessin", Verifie:"oui", Instrument:"instrument"};
+function champ(i, c, v){
+  const k = `data-ed="${i}:${c}"`, val = esc(v || "");
+  const sel = opts => `<select ${k}>${opts.map(o => `<option ${o === (v || "") ? "selected" : ""} value="${esc(o)}">${o || "—"}</option>`).join("")}</select>`;
+  switch (EDIT[c]){
+    case "oui": return sel(["", "Oui", "Non"]);
+    case "instrument": return sel(["", "Conventionnel", "GNSS"]);
+    case "arpenteur": return `<input ${k} list="dlArp" value="${val}" size="14" placeholder="Nom">`;
+    case "dessin": return `<span class="dessin"><input ${k} value="${val}" size="22" placeholder="Nom ou chemin du DWG">${v ? `<button class="btn small" data-cpd="${i}" title="Copier le chemin">⧉</button>` : ""}</span>`;
+    default: return `<input ${k} value="${val}" size="26" placeholder="—">`;
+  }
+}
+// Couleur de la validation selon l'état actuel de la ligne (le texte garde l'historique)
+function validationTag(r){
+  const v = r.Validation || "";
+  const k = r.Statut === "À vérifier" ? "warn" : /^Documents/.test(v) ? "" : "ok";
+  return k ? `<span class="vtag ${k}">${esc(v.replace(/^Nom conforme/, "Conforme"))}</span>` : esc(v);
+}
+// Revalide les lignes « À vérifier » avec les tables actuelles (NAT, arpenteurs, secteurs); l'historique est conservé
+async function revalider(){
+  if (!idxContrat) return;
+  let devenus = 0, toujours = 0;
+  for (const r of idxRows){
+    if (r.Statut !== "À vérifier" || !r.NomFichier || r.NomFichier === "(documents)") continue;
+    const pr = parseLeveFichier(r.NomFichier);
+    if (pr.ok){ r.Statut = "À traiter"; r.Validation = `${r.Validation} | Revalidé le ${nowIso().slice(0,10)} : conforme`; devenus++; }
+    else toujours++;
+  }
+  if (devenus){ idxDirty = true; await saveIndex(); await appendJournal("Revalidation index", `${idxContrat.nom} – ${devenus} ligne(s) devenue(s) conforme(s)`); }
+  renderIndex();
+  showMsg(devenus || toujours ? `Revalidation : ${devenus} ligne(s) devenue(s) conforme(s), ${toujours} toujours à vérifier.` : "Aucune ligne « À vérifier » dans cet index.", devenus ? "ok" : "bad");
+  setTimeout(() => showMsg(""), 5000);
 }
 
 /* ===== Classement selon la norme (étape M-004) ===== */
@@ -997,7 +1105,7 @@ function copierChemin(rel){
   navigator.clipboard.writeText(complet).then(() => { showMsg(`Chemin copié : ${esc(complet)}${racine ? " — collez-le dans l'Explorateur Windows." : " — indiquez le chemin Windows du dossier choisi (en haut) pour obtenir un chemin complet."}`, "ok"); setTimeout(() => showMsg(""), 5000); });
 }
 async function saveIndex(){
-  try { await writeFile(idxContrat.dir, INDEX_PATH, csvBuild(idxRows)); idxDirty = false; $("#btnIdxSave").disabled = true; showMsg("Index enregistré.", "ok"); setTimeout(() => showMsg(""), 2500);
+  try { await writeFile(idxContrat.dir, INDEX_PATH, csvBuild(idxRows)); idxDirty = false; $("#btnIdxSave").disabled = true; renderIndex(); showMsg("Index enregistré.", "ok"); setTimeout(() => showMsg(""), 2500);
     await appendJournal("Index modifié", idxContrat.nom); }
   catch(e){ showMsg(`L'index n'a pas pu être enregistré. Fermez INDEX_LEVES.csv dans Excel, puis réessayez. (${esc(e.message)})`); }
 }
@@ -1079,6 +1187,7 @@ $("#btnDeposer").onclick = deposer;
 $("#btnVider").onclick = () => { pending = []; lots = []; renderPending(); };
 $("#btnCreer").onclick = creerContrat;
 $("#btnIdxSave").onclick = saveIndex;
+$("#btnRevalider").onclick = revalider;
 $("#idxContrat").onchange = loadIndex;
 $("#idxFiltre").onchange = renderIndex;
 $("#deposant").onchange = e => localStorage.setItem("an.deposant", e.target.value);
