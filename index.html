@@ -188,21 +188,37 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 <!-- CONTRATS -->
 <section data-panel="contrats" hidden>
   <div class="panel">
-    <h2>Contrats actifs</h2>
+    <h2>Contrats</h2>
     <div id="contratsList"></div>
   </div>
-  <div class="panel">
-    <h2>Créer un contrat</h2>
-    <p class="small muted">Crée le dossier du contrat avec l'arborescence standard (NDA-001), sa fiche d'identification et son index des levés vide.</p>
-    <div class="row">
+  <div class="panel" id="activation">
+    <h2>Activer un contrat</h2>
+    <p class="small muted">Le dossier du contrat et son arborescence sont créés par l'administration à la mise en route du contrat. Ici, on <b>valide l'arborescence</b> et on précise <b>comment les levés du contrat sont identifiés</b> (code SECT du nom de fichier).</p>
+    <div class="row"><div class="field" style="min-width:320px"><label for="aContrat">Contrat</label><select id="aContrat"></select></div></div>
+    <div id="aArbo" style="margin-top:12px"></div>
+    <div style="margin-top:14px">
+      <label>Identification des levés (SECT)</label>
+      <div class="row small" style="margin-top:6px">
+        <label style="font-weight:500"><input type="radio" name="aMode" value="contrat" checked> Numéro de contrat (<span id="aDefaut">A000</span>)</label>
+        <label style="font-weight:500"><input type="radio" name="aMode" value="wbs"> WBS ou secteurs du client</label>
+      </div>
+      <div class="field" style="margin-top:8px"><label for="aSecteurs" id="aSectLabel">Secteurs additionnels (facultatif)</label>
+        <textarea id="aSecteurs" rows="4" placeholder="Un secteur par ligne : code de 4 caractères, puis sa description&#10;LOT4 Lot 4&#10;LOT5 Lot 5"></textarea></div>
+      <p class="small muted" id="aAide" style="margin:6px 0 0"></p>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn go" id="btnActiver">Activer le contrat</button></div>
+    <div class="log" id="contratLog"></div>
+  </div>
+  <details class="panel">
+    <summary><b>Créer un contrat de test</b> <span class="small muted">— rodage seulement; en production, les dossiers sont créés par l'administration</span></summary>
+    <div class="row" style="margin-top:10px">
       <div class="field"><label for="cNum">Numéro</label><input id="cNum" placeholder="AN-26-901" size="12"></div>
       <div class="field" style="flex:1;min-width:220px"><label for="cDesc">Description courte</label><input id="cDesc" placeholder="PILOTE_A"></div>
       <div class="field"><label for="cSect">Secteur (SECT)</label><input id="cSect" maxlength="4" size="6" placeholder="A901"></div>
       <button class="btn go" id="btnCreer">Créer le contrat</button>
     </div>
     <p class="small muted" id="cPreview" style="margin-bottom:0"></p>
-    <div class="log" id="contratLog"></div>
-  </div>
+  </details>
 </section>
 
 <!-- BILAN -->
@@ -217,7 +233,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.4 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.5 (2026-10-23).</footer>
 </main>
 
 <script>
@@ -357,7 +373,10 @@ function parseLeveFichier(name){
   return r;
 }
 // Secteurs d'un contrat : le code de niveau 3 (A005) est toujours valide; les secteurs ajoutés (WBS, chef-arpenteur) s'y ajoutent
-const secteursDe = c => [...new Set([sectDefaut(c.numero), ...(c.info?.secteurs || []), c.info?.sect].filter(Boolean).map(x => String(x).toUpperCase()))];
+// Secteurs d'un contrat. Mode « contrat » : code de niveau 3 (A005) + secteurs additionnels. Mode « wbs » : uniquement les secteurs déclarés.
+const codesSecteurs = c => (c.info?.secteurs || []).map(x => typeof x === "string" ? x : x.code);
+const secteursDe = c => [...new Set([...(c.info?.mode_secteur === "wbs" ? [] : [sectDefaut(c.numero), c.info?.sect]), ...codesSecteurs(c)].filter(Boolean).map(x => String(x).toUpperCase()))];
+const descSecteur = (c, code) => { const x = (c.info?.secteurs || []).find(y => String(y.code || y).toUpperCase() === code); return x && x.description || ""; };
 const contratParSect = sect => contrats.find(c => secteursDe(c).includes(String(sect).toUpperCase()));
 
 /* ===== Persistance du dossier choisi (IndexedDB) ===== */
@@ -439,29 +458,87 @@ async function renderContrats(){
     parts.push(`<div class="card">
       <div class="num">${esc(c.numero)}</div>
       <div class="small muted">${esc(c.nom.slice(c.numero.length).replace(/^[ _-]+/,"")) || "&nbsp;"}</div>
-      <div class="chips">${secteursDe(c).map(x => `<span class="chip">Secteur ${esc(x)}</span>`).join("")}<span class="chip">${c.numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD"}</span></div>
+      <div class="chips">${c.info?.active ? `<span class="state ok">Activé · ${c.info.mode_secteur === "wbs" ? "WBS" : "n° de contrat"}</span>` : `<span class="state warn">Non activé</span>`}</div>
+      <div class="chips">${secteursDe(c).map(x => `<span class="chip" title="${esc(descSecteur(c, x))}">${esc(x)}${descSecteur(c, x) ? " – " + esc(descSecteur(c, x)) : ""}</span>`).join("")}<span class="chip">${c.numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD"}</span></div>
       <div class="stats"><span><b>${nBoite}</b>dans la boîte</span><span><b>${nTraiter}</b>à l'index non traités</span></div>
-      <button class="btn small" style="margin-top:8px" data-inscrire="${esc(c.nom)}">Ajouter un secteur</button>
+      <button class="btn small" style="margin-top:8px" data-inscrire="${esc(c.nom)}">${c.info?.active ? "Modifier" : "Activer"}</button>
     </div>`);
   }
   box.innerHTML = `<div class="cards">${parts.join("")}</div>`;
-  box.querySelectorAll("[data-inscrire]").forEach(b => b.onclick = () => inscrire(b.dataset.inscrire));
+  box.querySelectorAll("[data-inscrire]").forEach(b => b.onclick = () => { $("#aContrat").value = b.dataset.inscrire; chargerActivation(); $("#activation").scrollIntoView({behavior:"smooth"}); });
+  const sel = $("#aContrat"), cur = sel.value;
+  sel.innerHTML = contrats.map(c => `<option value="${esc(c.nom)}">${esc(c.nom)}${c.info?.active ? "" : " (non activé)"}</option>`).join("");
+  if (cur && contrats.some(c => c.nom === cur)) sel.value = cur;
+  chargerActivation();
 }
 function sectDefaut(num){ const m = num.toUpperCase().match(/^([A-Z])[A-Z]-\d{2}-\d*(\d{3})$/); return m ? m[1] + m[2] : ""; }
-async function inscrire(nom){
-  const c = contrats.find(x => x.nom === nom);
-  const s = prompt(`Secteur additionnel pour ${c.numero} (4 caractères, ex. code WBS ou du chef-arpenteur).\nSecteurs actuels : ${secteursDe(c).join(", ")}`, "");
-  if (!s) return;
-  const sect = s.toUpperCase().trim();
-  if (!/^[A-Z0-9]{4}$/.test(sect)) return alert("Le code de secteur doit compter exactement 4 lettres ou chiffres.");
-  if (contratParSect(sect)) return alert(`Le secteur ${sect} est déjà utilisé par ${contratParSect(sect).nom}.`);
-  await ecrireInfo(c.dir, c.numero, nom, [...new Set([...(c.info?.secteurs || []), sect])]);
+/* ===== Activation d'un contrat ===== */
+const ARBO_CLES = [...STD_RACINE_LISTE(), "01_LEVES/00_TERRAINS","01_LEVES/01_A_VERIFIER","01_LEVES/02_DOUBLONS","01_LEVES/99_NDA-001","06_DONNEES_BRUTES/03_GNSS","06_DONNEES_BRUTES/04_STATION_TOTALE","07_PHOTOS/01_CHANTIER","07_PHOTOS/02_IMPLANTATION"];
+function STD_RACINE_LISTE(){ return ["00_LEVES_A_TRAITER","01_LEVES","02_IMPLANTATION","03_PLANS","04_PRODUCTION","05_LIVRABLES","06_DONNEES_BRUTES","07_PHOTOS","08_PARTAGE","09_DIVERS","10_ARCHIVES","11_ADMIN"]; }
+async function verifierArbo(c){
+  const manquants = [];
+  for (const k of ARBO_CLES){ try { await dir(c.dir, k.split("/")); } catch { manquants.push(k); } }
+  const herites = []; for await (const [n, h] of c.dir.entries()) if (h.kind === "directory" && !STD_RACINE_LISTE().includes(n)) herites.push(n);
+  return {manquants, herites};
+}
+let arboCourante = null;
+async function chargerActivation(){
+  const c = contrats.find(x => x.nom === $("#aContrat").value);
+  if (!c){ $("#aArbo").innerHTML = ""; return; }
+  $("#aDefaut").textContent = sectDefaut(c.numero) || "—";
+  const i = c.info || {};
+  document.querySelector(`input[name=aMode][value=${i.mode_secteur === "wbs" ? "wbs" : "contrat"}]`).checked = true;
+  $("#aSecteurs").value = (i.secteurs || []).map(x => typeof x === "string" ? x : `${x.code}${x.description ? " " + x.description : ""}`).join("\n");
+  majMode();
+  $("#aArbo").innerHTML = `<p class="small muted">Vérification de l'arborescence…</p>`;
+  arboCourante = await verifierArbo(c);
+  const {manquants, herites} = arboCourante;
+  $("#aArbo").innerHTML = `<div class="lot" style="margin-top:0">
+    <div class="lot-head"><h3>Arborescence</h3>${manquants.length ? `<span class="state warn">${manquants.length} dossier(s) manquant(s)</span>` : `<span class="state ok">Conforme à la NDA-001</span>`}</div>
+    ${manquants.length ? `<p class="small" style="margin:6px 0 0">Manquants : ${manquants.map(m => `<code>${esc(m.replace(/\//g,"\\"))}</code>`).join(", ")}</p><p class="small muted" style="margin:4px 0 0">L'outil ne crée pas l'arborescence. Les dossiers de destination manquants seront créés au premier classement d'un levé.</p>` : ""}
+    ${herites.length ? `<p class="small muted" style="margin:6px 0 0">Dossiers hors norme conservés tels quels : ${herites.map(esc).join(", ")}</p>` : ""}
+    ${i.active ? `<p class="small muted" style="margin:6px 0 0">Activé le ${esc(i.active_le || "")} par ${esc(i.active_par || "")}.</p>` : ""}
+  </div>`;
+}
+function majMode(){
+  const wbs = document.querySelector("input[name=aMode]:checked").value === "wbs";
+  const c = contrats.find(x => x.nom === $("#aContrat").value);
+  $("#aSectLabel").textContent = wbs ? "Secteurs de travail (au moins un)" : "Secteurs additionnels (facultatif)";
+  $("#aAide").textContent = wbs
+    ? "Les fichiers de ce contrat utilisent un code du client à la place du numéro de contrat, ex. 260803LOT41STA63 → secteur LOT4. Seuls les secteurs déclarés ici sont reconnus."
+    : `Les fichiers portent le code du numéro de contrat, ex. AAMMJJ${c ? sectDefaut(c.numero) : "A000"}#NATSS. Ajoutez ici d'autres codes au besoin (WBS, chef-arpenteur).`;
+}
+function lireSecteurs(){
+  const lignes = $("#aSecteurs").value.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  const ok = [], erreurs = [];
+  for (const l of lignes){
+    const m = l.match(/^(\S+)\s*[-–:=]?\s*(.*)$/); const code = m[1].toUpperCase();
+    if (!/^[A-Z0-9]{4}$/.test(code)) erreurs.push(`« ${m[1]} » : ${code.length} caractère(s), il en faut exactement 4`);
+    else if (ok.some(x => x.code === code)) erreurs.push(`« ${code} » est en double`);
+    else ok.push({code, description: m[2] || ""});
+  }
+  return {ok, erreurs};
+}
+async function activer(){
+  const c = contrats.find(x => x.nom === $("#aContrat").value); if (!c) return;
+  const mode = document.querySelector("input[name=aMode]:checked").value;
+  const {ok, erreurs} = lireSecteurs();
+  if (erreurs.length) return alert("Secteurs à corriger :\n\n" + erreurs.join("\n"));
+  if (mode === "wbs" && !ok.length) return alert("Un contrat qui utilise des WBS doit avoir au moins un secteur de travail.");
+  const visés = [...(mode === "wbs" ? [] : [sectDefaut(c.numero)]), ...ok.map(x => x.code)];
+  for (const x of visés){ const autre = contrats.find(o => o !== c && secteursDe(o).includes(x)); if (autre) return alert(`Le secteur ${x} est déjà utilisé par ${autre.nom}. Chaque secteur doit appartenir à un seul contrat actif.`); }
+  if (arboCourante?.manquants.length && !confirm(`L'arborescence de ${c.nom} est incomplète (${arboCourante.manquants.length} dossier(s) manquant(s)). Activer quand même ?`)) return;
+  await ecrireInfo(c.dir, c.numero, c.nom, {mode_secteur: mode, secteurs: ok, arborescence: {verifiee_le: nowIso(), manquants: arboCourante?.manquants || [], herites: arboCourante?.herites || []}});
   if ((await readText(c.dir, INDEX_PATH)) === null) await writeFile(c.dir, INDEX_PATH, csvBuild([]));
-  await appendJournal("Secteur ajouté", `${nom} – secteur ${sect}`);
+  log("#contratLog", `Activé : ${c.nom} – ${mode === "wbs" ? "WBS" : "numéro de contrat"} – secteurs ${visés.join(", ")}`);
+  await appendJournal("Activation contrat", `${c.nom} – ${mode} – ${visés.join(", ")}`);
   await scanContrats(); await scanBoite();
 }
-async function ecrireInfo(d, numero, nom, secteurs){
-  const info = {numero, dossier:nom, secteur_defaut: sectDefaut(numero), secteurs, entite: numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD", inscrit_le: nowIso(), inscrit_par: localStorage.getItem("an.deposant") || ""};
+async function ecrireInfo(d, numero, nom, opts){
+  const prev = await readText(d, INFO_PATH).then(t => t ? JSON.parse(t) : {}).catch(() => ({}));
+  const info = {...prev, numero, dossier:nom, secteur_defaut: sectDefaut(numero), entite: numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD",
+    ...opts, active: true, active_le: nowIso(), active_par: localStorage.getItem("an.deposant") || ""};
+  delete info.sect;
   await writeFile(d, INFO_PATH, JSON.stringify(info, null, 2));
 }
 function majPreview(){
@@ -481,7 +558,7 @@ async function creerContrat(){
   try {
     const d = await root.getDirectoryHandle(nom, {create:true});
     for (const p of ARBO) await dir(d, p.split("/"), true);
-    await ecrireInfo(d, num, nom, sect === sectDefaut(num) ? [] : [sect]);
+    await ecrireInfo(d, num, nom, {mode_secteur: "contrat", secteurs: sect === sectDefaut(num) ? [] : [{code: sect, description: ""}]});
     await writeFile(d, INDEX_PATH, csvBuild([]));
     log("#contratLog", `Contrat créé : ${nom} (secteur ${sect}, ${ARBO.length} dossiers)`);
     await appendJournal("Création contrat", `${nom} – secteur ${sect}`);
@@ -918,6 +995,9 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
 });
 $("#btnPick").onclick = pickRoot;
 $("#btnBilan").onclick = lancerBilan;
+$("#aContrat").onchange = chargerActivation;
+document.querySelectorAll("input[name=aMode]").forEach(r => r.onchange = majMode);
+$("#btnActiver").onclick = activer;
 $("#btnBilanCopier").onclick = copierBilan;
 $("#racine").value = localStorage.getItem("an.racine") || "";
 $("#racine").onchange = e => localStorage.setItem("an.racine", e.target.value.trim());
