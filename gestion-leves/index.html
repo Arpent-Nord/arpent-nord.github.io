@@ -83,6 +83,28 @@ td.wrap{white-space:normal;min-width:180px}
 .msg.bad{background:var(--bad-soft);color:var(--bad)}
 .msg.ok{background:var(--ok-soft);color:var(--ok)}
 .empty{padding:22px;text-align:center;color:var(--muted)}
+td.ed input,td.ed select{padding:3px 6px;font-size:.86rem}
+td.ed.modif input,td.ed.modif select{border-color:var(--accent);background:var(--accent-soft)}
+.dessin{display:inline-flex;gap:4px;align-items:center}
+.vtag{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:600;font-size:.82rem;white-space:normal}
+.vtag.ok{background:var(--ok-soft);color:var(--ok)}
+.vtag.warn{background:var(--warn-soft);color:var(--warn)}
+.legende{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.legende dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0;align-items:baseline}
+.legende dd{margin:0;color:var(--muted)}
+.state{cursor:default}
+.corr{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--warn-soft)}
+.galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.galerie figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.galerie img{display:block;width:100%;height:150px;object-fit:cover}
+.galerie figcaption{font-size:.78rem;padding:4px 6px;color:var(--muted);word-break:break-all}
+.galerie .noprev{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;text-align:center;padding:8px}
+.secthead,.sectrow{display:grid;grid-template-columns:110px 1fr 36px;gap:8px;align-items:center}
+.secthead{margin:6px 0 2px}
+.sectrow{margin-top:4px}
+.sectrow input.sc{text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}
+.sectrow input.bad{border-color:var(--bad);background:var(--bad-soft)}
+.sectrow button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;height:32px;cursor:pointer}
 [hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 footer{margin-top:22px;color:var(--muted);font-size:.85rem}
@@ -103,16 +125,24 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   <span>Dossier des contrats actifs : <span class="path" id="connPath">aucun</span></span>
   <button class="btn go" id="btnPick">Choisir le dossier 01_ACTIFS</button>
   <button class="btn" id="btnReconnect" hidden>Reconnecter</button>
+  <span class="field" style="flex-basis:100%"><label for="racine" class="small">Chemin Windows de ce dossier (pour copier les chemins vers l'Explorateur, facultatif)</label>
+    <input id="racine" placeholder="D:\ARPENT-NORD\Projet Arpent-Nord - Documents\General\01_CONTRATS\99_EN RODAGE" style="width:100%"></span>
   <span class="hint" id="connHint">Choisissez le dossier <b>…\General\01_CONTRATS\01_ACTIFS</b> synchronisé par OneDrive. La boîte de dépôt « 01 - TRAITEMENT » y sera créée si elle n'existe pas.</span>
 </section>
 
 <div id="globalMsg"></div>
+
+<section class="panel" id="galerie" hidden aria-label="Photos du levé">
+  <div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0" id="galTitre">Photos</h2><button class="btn" id="galFermer">Fermer</button></div>
+  <div id="galGrille" class="galerie"></div>
+</section>
 
 <nav role="tablist">
   <button role="tab" data-tab="depot" aria-selected="true">Déposer</button>
   <button role="tab" data-tab="boite" aria-selected="false">Boîte de dépôt<span class="count" id="cntBoite"></span></button>
   <button role="tab" data-tab="index" aria-selected="false">Index des levés</button>
   <button role="tab" data-tab="contrats" aria-selected="false">Contrats</button>
+  <button role="tab" data-tab="bilan" aria-selected="false">Bilan</button>
 </nav>
 
 <!-- DÉPOSER -->
@@ -126,7 +156,8 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     </div>
     <div class="drop" id="drop" tabindex="0" role="button" aria-label="Ajouter des fichiers">
       <b>Glissez les fichiers ici</b>
-      <span class="muted">ou cliquez pour les choisir (.txt, .csv, photos, PDF, notes…)</span>
+      <span class="muted">Un dossier de levé complet (txt, _MODIF, photos, carnet, DBX…) ou des fichiers séparés. Cliquez pour choisir des fichiers.</span>
+      <span style="display:block;margin-top:10px"><button type="button" class="btn small" id="btnDossier">Choisir un dossier de levé</button></span>
       <input type="file" id="fileInput" multiple hidden>
     </div>
     <div id="lotsPreview"></div>
@@ -149,6 +180,15 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       </div>
     </div>
     <p class="small muted">Les lots sont regroupés par contrat selon le code de secteur du nom de fichier. « Répartir » déplace le lot dans le dossier 00_LEVES_A_TRAITER du contrat et l'inscrit à l'index avec le statut « À traiter ».</p>
+    <div class="legende small">
+      <p style="margin:0 0 6px"><b>Les étiquettes sont des indicateurs, pas des boutons.</b> Les actions sont en bas de chaque lot.</p>
+      <dl>
+        <dt><span class="state new">Nouveau</span></dt><dd>Arrivé depuis votre dernière visite. « Marquer tout comme vu » retire l'étiquette.</dd>
+        <dt><span class="state ok">Conforme</span></dt><dd>Le nom respecte AAMMJJSECT#NATSS et le secteur appartient à un contrat : le lot peut être réparti.</dd>
+        <dt><span class="state warn">À vérifier</span></dt><dd>Le nom ne respecte pas la norme; la raison est indiquée sous le lot. Utilisez <b>« Corriger le nom »</b> : seul le fichier d'exportation (.txt et _MODIF) est renommé, les données brutes gardent leur nom de terrain. Un lot réparti sans correction reste « À vérifier » à l'index.</dd>
+        <dt><span class="state warn">Documents</span></dt><dd>Lot sans fichier de levé (scans, notes, photos) : choisissez le contrat, puis répartissez.</dd>
+      </dl>
+    </div>
     <div id="boiteList"></div>
     <div class="log" id="boiteLog"></div>
   </div>
@@ -163,6 +203,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
         <div class="field"><label for="idxContrat">Contrat</label><select id="idxContrat"></select></div>
         <div class="field"><label for="idxFiltre">Statut</label>
           <select id="idxFiltre"><option value="">Tous</option><option>À traiter</option><option>À vérifier</option><option>Traité</option></select></div>
+        <button class="btn" id="btnRevalider" title="Revérifie les lignes « À vérifier » avec les tables actuelles">Revalider</button>
         <button class="btn go" id="btnIdxSave" disabled>Enregistrer les modifications</button>
       </div>
     </div>
@@ -174,24 +215,59 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 <!-- CONTRATS -->
 <section data-panel="contrats" hidden>
   <div class="panel">
-    <h2>Contrats actifs</h2>
+    <h2>Contrats</h2>
     <div id="contratsList"></div>
   </div>
-  <div class="panel">
-    <h2>Créer un contrat</h2>
-    <p class="small muted">Crée le dossier du contrat avec l'arborescence standard (NDA-001), sa fiche d'identification et son index des levés vide.</p>
-    <div class="row">
+  <div class="panel" id="activation">
+    <h2>Activer un contrat</h2>
+    <p class="small muted">Le dossier du contrat et son arborescence sont créés par l'administration à la mise en route du contrat. Ici, on <b>valide l'arborescence</b> et on précise <b>comment les levés du contrat sont identifiés</b> (code SECT du nom de fichier).</p>
+    <div class="row"><div class="field" style="min-width:320px"><label for="aContrat">Contrat</label><select id="aContrat"></select></div></div>
+    <div id="aArbo" style="margin-top:12px"></div>
+    <div style="margin-top:14px">
+      <label>Identification des levés (SECT)</label>
+      <div class="row small" style="margin-top:6px">
+        <label style="font-weight:500"><input type="radio" name="aMode" value="contrat" checked> Numéro de contrat (<span id="aDefaut">A000</span>)</label>
+        <label style="font-weight:500"><input type="radio" name="aMode" value="wbs"> WBS ou secteurs du client</label>
+      </div>
+      <div style="margin-top:8px"><label id="aSectLabel">Secteurs additionnels (facultatif)</label>
+        <div class="secthead small muted"><span>Code (4 car.)</span><span>Description</span></div>
+        <div id="aRows"></div>
+        <div class="row" style="margin-top:6px"><button type="button" class="btn small" id="btnAjSect">+ Ajouter un secteur</button><button type="button" class="btn small" id="btnColler">Coller une liste depuis Excel</button></div>
+        <div id="aCollerBox" hidden style="margin-top:8px">
+          <textarea id="aColler" rows="5" placeholder="Copiez deux colonnes dans Excel (code, description) et collez-les ici.&#10;LOT4	Stationnement des débardeurs&#10;LOT5	Quai nord"></textarea>
+          <div class="row" style="margin-top:6px"><button type="button" class="btn small go" id="btnImporter">Ajouter ces secteurs</button><span class="small muted">Séparateurs acceptés : tabulation (Excel), virgule, point-virgule ou tiret.</span></div>
+        </div>
+      </div>
+      <p class="small muted" id="aAide" style="margin:6px 0 0"></p>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn go" id="btnActiver">Activer le contrat</button></div>
+    <div class="log" id="contratLog"></div>
+  </div>
+  <details class="panel">
+    <summary><b>Créer un contrat de test</b> <span class="small muted">— rodage seulement; en production, les dossiers sont créés par l'administration</span></summary>
+    <div class="row" style="margin-top:10px">
       <div class="field"><label for="cNum">Numéro</label><input id="cNum" placeholder="AN-26-901" size="12"></div>
       <div class="field" style="flex:1;min-width:220px"><label for="cDesc">Description courte</label><input id="cDesc" placeholder="PILOTE_A"></div>
       <div class="field"><label for="cSect">Secteur (SECT)</label><input id="cSect" maxlength="4" size="6" placeholder="A901"></div>
       <button class="btn go" id="btnCreer">Créer le contrat</button>
     </div>
     <p class="small muted" id="cPreview" style="margin-bottom:0"></p>
-    <div class="log" id="contratLog"></div>
+  </details>
+</section>
+
+<!-- BILAN -->
+<section data-panel="bilan" hidden>
+  <div class="panel">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">Bilan des contrats</h2>
+      <div class="row"><button class="btn go" id="btnBilan">Lancer le bilan</button><button class="btn" id="btnBilanCopier" disabled>Copier pour Excel</button></div>
+    </div>
+    <p class="small muted">Lecture seule : rien n'est modifié. Sert à décider, contrat par contrat, s'il reste sur l'ancienne méthode, s'il est mis à niveau ou si son index Excel doit être importé.</p>
+    <div id="bilanTable"></div>
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.1 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.10 (2026-10-23).</footer>
 </main>
 
 <script>
@@ -204,7 +280,12 @@ const INDEX_PATH = ["01_LEVES", "INDEX_LEVES.csv"];
 const RE_CONTRAT = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{4})(?=$|[_ ])/i;
 const EXT_LEVE = [".txt", ".csv"];
 const EXT_PHOTO = [".jpg", ".jpeg", ".png", ".heic", ".bmp", ".tif", ".tiff"];
-const EXT_CARNET = [".pdf"];
+const EXT_CARNET = [".pdf",".doc",".docx",".rtf"];
+// Données brutes : fichiers de travail pouvant contenir GNSS et conventionnel (question obligatoire) / fichiers GNSS seulement
+let BRUT_DEMANDER = [".dc",".job",".jxl",".xcf",".dbx"];
+let BRUT_GNSS = [".t01",".t02",".t04",".obs",".nav",".rnx",".ubx",".gnss",".26o",".25o",".24o"];
+const isDBX = n => /\.x\d\d$/i.test(n) || BRUT_DEMANDER.includes(ext(n));
+const isGnss = n => BRUT_GNSS.includes(ext(n)) || /\.\d\d[ongl]$/i.test(n);
 const TYPES = {"1":"Levé","2":"Implantation","3":"Quantité","4":"TQC","5":"Contrôle","6":"Relevé conjoint","7":"Tiers"};
 let NAT = {ANC:"Ancrage",ARM:"Armature",BAT:"Bathymétrie",BET:"Béton",BLL:"Ballast",BOR:"Bordure",COF:"Coffrage",CUL:"Culée",DEC:"Décapage",DIV:"Divers",DRA:"Drainage",EMP:"Empierrement",ENV:"Environnement",EXC:"Déblai, terrain excavé",FOR:"Forage",FOS:"Fossé",GAZ:"Conduites de gaz",GEO:"Géogrille",GLI:"Glissière",GRF:"Granulaire de fondation (MG20)",GRS:"Granulaire de sous-fondation (MG112)",INF:"Infra",INI:"Terrain initial",JPV:"Juste pour voir",MEM:"Membrane géotextile",MON:"Monitoring de structure",MUR:"Mur de soutènement",PAL:"Palplanche",PAV:"Pavage",PIE:"Pieux / caissons",PIL:"Pile de réserve",PLU:"Égout pluvial",PON:"Pont et ponceau",POU:"Poutre",REM:"Remblai",ROB:"Boulon d'ancrage",ROC:"Roc",SAN:"Égout sanitaire",SCI:"Sciage",SIG:"Signalisation routière",SON:"Sondage",SST:"Santé et sécurité",STA:"Réseau de stations",SUE:"Surexcavation",TAB:"Tablier",TNN:"Terrain naturel",TRA:"Transition",TRO:"Trottoir",UTI:"Utilités publiques"};
 let ARPENTEURS = {}; // ss -> nom (chargé de _SYSTEME/reference.json)
@@ -221,7 +302,7 @@ const ARBO = ["00_LEVES_A_TRAITER","01_LEVES","01_LEVES/00_TERRAINS","01_LEVES/0
  "09_DIVERS/01_RAPPORT_AUTOMATISE",
  "10_ARCHIVES/01_DOCUMENTS","10_ARCHIVES/02_IMPLANTATION","10_ARCHIVES/03_PLANS","10_ARCHIVES/04_PRODUCTION","10_ARCHIVES/05_LIVRABLES","10_ARCHIVES/06_EXCEL",
  "11_ADMIN"];
-const IDX_COLS = ["Statut","NomFichier","Date_Leve","Secteur","Type","NAT","Nature","SS","Arpenteur","Remarques","Photos","Carnet","Autres_fichiers","Dossier","Depose_par","Date_Depot","Date_Repartition","Traite_par","Date_Traitement","Dessin","Mis_dans_DWG","Verifie","Validation"];
+const IDX_COLS = ["Statut","NomFichier","Nom_terrain","Date_Leve","Secteur","Type","NAT","Nature","SS","Arpenteur","Remarques","Photos","Carnet","Version_modifiee","Instrument","Autres_fichiers","Dossier","Chemin_Leve","Chemin_Brutes","Chemin_Photos","Depose_par","Date_Depot","Date_Repartition","Traite_par","Date_Traitement","Dessin","Mis_dans_DWG","Verifie","Validation"];
 
 /* ===== État ===== */
 let root = null;            // handle de 01_ACTIFS
@@ -318,7 +399,19 @@ function parseLeve(name){
   r.ok = r.erreurs.length === 0;
   return r;
 }
-const contratParSect = sect => contrats.find(c => c.info && c.info.sect && c.info.sect.toUpperCase() === String(sect).toUpperCase());
+// Analyse un fichier de levé même s'il porte un suffixe (_MODIF…) : on valide les 16 caractères de base
+function parseLeveFichier(name){
+  const k = leveKey(name), b = base(name).toUpperCase();
+  const r = parseLeve(k + ext(name));
+  if (b !== k){ r.erreurs.push(`fichier original absent : seule la version « ${base(name)} » est fournie`); r.ok = false; }
+  return r;
+}
+// Secteurs d'un contrat : le code de niveau 3 (A005) est toujours valide; les secteurs ajoutés (WBS, chef-arpenteur) s'y ajoutent
+// Secteurs d'un contrat. Mode « contrat » : code de niveau 3 (A005) + secteurs additionnels. Mode « wbs » : uniquement les secteurs déclarés.
+const codesSecteurs = c => (c.info?.secteurs || []).map(x => typeof x === "string" ? x : x.code);
+const secteursDe = c => [...new Set([...(c.info?.mode_secteur === "wbs" ? [] : [sectDefaut(c.numero), c.info?.sect]), ...codesSecteurs(c)].filter(Boolean).map(x => String(x).toUpperCase()))];
+const descSecteur = (c, code) => { const x = (c.info?.secteurs || []).find(y => String(y.code || y).toUpperCase() === code); return x && x.description || ""; };
+const contratParSect = sect => contrats.find(c => secteursDe(c).includes(String(sect).toUpperCase()));
 
 /* ===== Persistance du dossier choisi (IndexedDB) ===== */
 const idb = {
@@ -362,6 +455,8 @@ async function loadReference(){
     const ref = JSON.parse(t);
     if (Array.isArray(ref.arpenteurs)) ARPENTEURS = Object.fromEntries(ref.arpenteurs.filter(a => a.actif !== false).map(a => [String(a.ss).padStart(2,"0"), a.nom]));
     if (Array.isArray(ref.nat)) NAT = Object.fromEntries(ref.nat.map(n => [n.code, n.description]));
+    if (Array.isArray(ref.brutes?.demander)) BRUT_DEMANDER = ref.brutes.demander.map(x => x.toLowerCase());
+    if (Array.isArray(ref.brutes?.gnss)) BRUT_GNSS = ref.brutes.gnss.map(x => x.toLowerCase());
   } catch(e){ showMsg("Le fichier _SYSTEME/reference.json est illisible : la liste par défaut est utilisée."); }
   const sel = $("#deposant"), cur = localStorage.getItem("an.deposant") || "";
   sel.innerHTML = `<option value="">— choisir —</option>` + Object.entries(ARPENTEURS).map(([ss,n]) => `<option value="${esc(n)}" ${n===cur?"selected":""}>${ss} – ${esc(n)}</option>`).join("") + `<option value="Bureau">Bureau</option>`;
@@ -378,9 +473,12 @@ async function scanContrats(){
     contrats.push({dir:h, nom:name, numero:name.match(RE_CONTRAT)[1].toUpperCase(), info});
   }
   contrats.sort((a,b) => a.nom.localeCompare(b.nom));
+  const vus = {}, conflits = [];
+  for (const c of contrats) for (const x of secteursDe(c)){ if (vus[x] && vus[x] !== c.nom) conflits.push(`${x} : ${vus[x]} et ${c.nom}`); vus[x] = c.nom; }
+  showMsg(conflits.length ? `Secteur utilisé par deux contrats actifs — les levés de ce secteur ne pourront pas être répartis automatiquement : ${conflits.map(esc).join(" · ")}` : "");
   renderContrats();
   const sel = $("#idxContrat"), cur = sel.value;
-  sel.innerHTML = contrats.filter(c => c.info).map(c => `<option value="${esc(c.nom)}">${esc(c.nom)}</option>`).join("") || `<option value="">Aucun contrat inscrit</option>`;
+  sel.innerHTML = contrats.map(c => `<option value="${esc(c.nom)}">${esc(c.nom)}</option>`).join("") || `<option value="">Aucun contrat</option>`;
   if (cur) sel.value = cur;
 }
 async function renderContrats(){
@@ -390,34 +488,113 @@ async function renderContrats(){
   for (const c of contrats){
     const nBoite = boite.filter(l => l.contrat === c.nom).length;
     let nTraiter = "–";
-    if (c.info){ const t = await readText(c.dir, INDEX_PATH); if (t !== null) nTraiter = csvParse(t).filter(r => r.Statut !== "Traité").length; }
+    { const t = await readText(c.dir, INDEX_PATH); if (t !== null) nTraiter = csvParse(t).filter(r => r.Statut !== "Traité").length; }
     parts.push(`<div class="card">
       <div class="num">${esc(c.numero)}</div>
       <div class="small muted">${esc(c.nom.slice(c.numero.length).replace(/^[ _-]+/,"")) || "&nbsp;"}</div>
-      ${c.info ? `<div class="chips"><span class="chip">Secteur ${esc(c.info.sect)}</span><span class="chip">${esc(c.info.entite)}</span></div>
-        <div class="stats"><span><b>${nBoite}</b>dans la boîte</span><span><b>${nTraiter}</b>à l'index non traités</span></div>`
-      : `<p class="small" style="margin:8px 0">Pas encore inscrit : aucun secteur associé.</p>
-         <button class="btn small" data-inscrire="${esc(c.nom)}">Inscrire ce contrat</button>`}
+      <div class="chips">${c.info?.active ? `<span class="state ok">Activé · ${c.info.mode_secteur === "wbs" ? "WBS" : "n° de contrat"}</span>` : `<span class="state warn">Non activé</span>`}</div>
+      <div class="chips">${secteursDe(c).map(x => `<span class="chip" title="${esc(descSecteur(c, x))}">${esc(x)}${descSecteur(c, x) ? " – " + esc(descSecteur(c, x)) : ""}</span>`).join("")}<span class="chip">${c.numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD"}</span></div>
+      <div class="stats"><span><b>${nBoite}</b>dans la boîte</span><span><b>${nTraiter}</b>à l'index non traités</span></div>
+      <button class="btn small" style="margin-top:8px" data-inscrire="${esc(c.nom)}">${c.info?.active ? "Modifier" : "Activer"}</button>
     </div>`);
   }
   box.innerHTML = `<div class="cards">${parts.join("")}</div>`;
-  box.querySelectorAll("[data-inscrire]").forEach(b => b.onclick = () => inscrire(b.dataset.inscrire));
+  box.querySelectorAll("[data-inscrire]").forEach(b => b.onclick = () => { $("#aContrat").value = b.dataset.inscrire; chargerActivation(); $("#activation").scrollIntoView({behavior:"smooth"}); });
+  const sel = $("#aContrat"), cur = sel.value;
+  sel.innerHTML = contrats.map(c => `<option value="${esc(c.nom)}">${esc(c.nom)}${c.info?.active ? "" : " (non activé)"}</option>`).join("");
+  if (cur && contrats.some(c => c.nom === cur)) sel.value = cur;
+  chargerActivation();
 }
 function sectDefaut(num){ const m = num.toUpperCase().match(/^([A-Z])[A-Z]-\d{2}-\d*(\d{3})$/); return m ? m[1] + m[2] : ""; }
-async function inscrire(nom){
-  const c = contrats.find(x => x.nom === nom);
-  const s = prompt(`Code de secteur (4 caractères) pour ${c.numero} :`, sectDefaut(c.numero));
-  if (!s) return;
-  const sect = s.toUpperCase().trim();
-  if (!/^[A-Z0-9]{4}$/.test(sect)) return alert("Le code de secteur doit compter exactement 4 lettres ou chiffres.");
-  if (contratParSect(sect)) return alert(`Le secteur ${sect} est déjà utilisé par ${contratParSect(sect).nom}.`);
-  await ecrireInfo(c.dir, c.numero, nom, sect);
+/* ===== Activation d'un contrat ===== */
+const ARBO_CLES = [...STD_RACINE_LISTE(), "01_LEVES/00_TERRAINS","01_LEVES/01_A_VERIFIER","01_LEVES/02_DOUBLONS","01_LEVES/99_NDA-001","06_DONNEES_BRUTES/03_GNSS","06_DONNEES_BRUTES/04_STATION_TOTALE","07_PHOTOS/01_CHANTIER","07_PHOTOS/02_IMPLANTATION"];
+function STD_RACINE_LISTE(){ return ["00_LEVES_A_TRAITER","01_LEVES","02_IMPLANTATION","03_PLANS","04_PRODUCTION","05_LIVRABLES","06_DONNEES_BRUTES","07_PHOTOS","08_PARTAGE","09_DIVERS","10_ARCHIVES","11_ADMIN"]; }
+async function verifierArbo(c){
+  const manquants = [];
+  for (const k of ARBO_CLES){ try { await dir(c.dir, k.split("/")); } catch { manquants.push(k); } }
+  const herites = []; for await (const [n, h] of c.dir.entries()) if (h.kind === "directory" && !STD_RACINE_LISTE().includes(n)) herites.push(n);
+  return {manquants, herites};
+}
+let arboCourante = null;
+async function chargerActivation(){
+  const c = contrats.find(x => x.nom === $("#aContrat").value);
+  if (!c){ $("#aArbo").innerHTML = ""; return; }
+  $("#aDefaut").textContent = sectDefaut(c.numero) || "—";
+  const i = c.info || {};
+  document.querySelector(`input[name=aMode][value=${i.mode_secteur === "wbs" ? "wbs" : "contrat"}]`).checked = true;
+  $("#aRows").innerHTML = ""; (i.secteurs || []).forEach(x => ajouterLigne(typeof x === "string" ? x : x.code, typeof x === "string" ? "" : x.description));
+  if (!$("#aRows").children.length) ajouterLigne();
+  majMode();
+  $("#aArbo").innerHTML = `<p class="small muted">Vérification de l'arborescence…</p>`;
+  arboCourante = await verifierArbo(c);
+  const {manquants, herites} = arboCourante;
+  $("#aArbo").innerHTML = `<div class="lot" style="margin-top:0">
+    <div class="lot-head"><h3>Arborescence</h3>${manquants.length ? `<span class="state warn">${manquants.length} dossier(s) manquant(s)</span>` : `<span class="state ok">Conforme à la NDA-001</span>`}</div>
+    ${manquants.length ? `<p class="small" style="margin:6px 0 0">Manquants : ${manquants.map(m => `<code>${esc(m.replace(/\//g,"\\"))}</code>`).join(", ")}</p><p class="small muted" style="margin:4px 0 0">L'outil ne crée pas l'arborescence. Les dossiers de destination manquants seront créés au premier classement d'un levé.</p>` : ""}
+    ${herites.length ? `<p class="small muted" style="margin:6px 0 0">Dossiers hors norme conservés tels quels : ${herites.map(esc).join(", ")}</p>` : ""}
+    ${i.active ? `<p class="small muted" style="margin:6px 0 0">Activé le ${esc(i.active_le || "")} par ${esc(i.active_par || "")}.</p>` : ""}
+  </div>`;
+}
+function majMode(){
+  const wbs = document.querySelector("input[name=aMode]:checked").value === "wbs";
+  const c = contrats.find(x => x.nom === $("#aContrat").value);
+  $("#aSectLabel").textContent = wbs ? "Secteurs de travail (au moins un)" : "Secteurs additionnels (facultatif)";
+  $("#aAide").textContent = wbs
+    ? "Les fichiers de ce contrat utilisent un code du client à la place du numéro de contrat, ex. 260803LOT41STA63 → secteur LOT4. Seuls les secteurs déclarés ici sont reconnus."
+    : `Les fichiers portent le code du numéro de contrat, ex. AAMMJJ${c ? sectDefaut(c.numero) : "A000"}#NATSS. Ajoutez ici d'autres codes au besoin (WBS, chef-arpenteur).`;
+}
+function ajouterLigne(code = "", description = ""){
+  const r = document.createElement("div"); r.className = "sectrow";
+  r.innerHTML = `<input class="sc" maxlength="4" placeholder="LOT4" aria-label="Code du secteur"><input class="sd" placeholder="Stationnement des débardeurs" aria-label="Description du secteur"><button type="button" title="Retirer" aria-label="Retirer">✕</button>`;
+  const sc = r.querySelector(".sc"); sc.value = code; r.querySelector(".sd").value = description;
+  const valider = () => { sc.value = sc.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); sc.classList.toggle("bad", sc.value !== "" && sc.value.length !== 4); };
+  sc.oninput = valider; valider();
+  if (code && code.replace(/[^A-Za-z0-9]/g,"").length !== 4){ sc.value = code.toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,8); sc.classList.add("bad"); sc.removeAttribute("maxlength"); }
+  r.querySelector("button").onclick = () => { r.remove(); if (!$("#aRows").children.length) ajouterLigne(); };
+  $("#aRows").append(r);
+}
+// Lit une liste collée (Excel : tabulation; sinon virgule, point-virgule ou tiret)
+function importerListe(texte){
+  const vides = [...$("#aRows").children].filter(r => !r.querySelector(".sc").value && !r.querySelector(".sd").value); vides.forEach(r => r.remove());
+  let n = 0;
+  for (const l of texte.split(/\r?\n/).map(x => x.trim()).filter(Boolean)){
+    const m = l.match(/^([^\t,;]+?)\s*(?:\t|,|;|\s[-–=:]\s|\s+)\s*(.*)$/) || [null, l, ""];
+    ajouterLigne(m[1].trim(), (m[2] || "").replace(/^[\t,;\s]+/, "").trim()); n++;
+  }
+  if (!$("#aRows").children.length) ajouterLigne();
+  return n;
+}
+function lireSecteurs(){
+  const ok = [], erreurs = [];
+  for (const r of $("#aRows").children){
+    const code = r.querySelector(".sc").value.trim().toUpperCase(), description = r.querySelector(".sd").value.trim();
+    if (!code && !description) continue;
+    if (!/^[A-Z0-9]{4}$/.test(code)) erreurs.push(`« ${code || "(vide)"} » : ${code.length} caractère(s), il en faut exactement 4 (lettres ou chiffres)`);
+    else if (ok.some(x => x.code === code)) erreurs.push(`« ${code} » est en double`);
+    else ok.push({code, description});
+  }
+  return {ok, erreurs};
+}
+async function activer(){
+  const c = contrats.find(x => x.nom === $("#aContrat").value); if (!c) return;
+  const mode = document.querySelector("input[name=aMode]:checked").value;
+  const {ok, erreurs} = lireSecteurs();
+  if (erreurs.length) return alert("Secteurs à corriger :\n\n" + erreurs.join("\n"));
+  if (mode === "wbs" && !ok.length) return alert("Un contrat qui utilise des WBS doit avoir au moins un secteur de travail.");
+  const visés = [...(mode === "wbs" ? [] : [sectDefaut(c.numero)]), ...ok.map(x => x.code)];
+  for (const x of visés){ const autre = contrats.find(o => o !== c && secteursDe(o).includes(x)); if (autre) return alert(`Le secteur ${x} est déjà utilisé par ${autre.nom}. Chaque secteur doit appartenir à un seul contrat actif.`); }
+  if (arboCourante?.manquants.length && !confirm(`L'arborescence de ${c.nom} est incomplète (${arboCourante.manquants.length} dossier(s) manquant(s)). Activer quand même ?`)) return;
+  await ecrireInfo(c.dir, c.numero, c.nom, {mode_secteur: mode, secteurs: ok, arborescence: {verifiee_le: nowIso(), manquants: arboCourante?.manquants || [], herites: arboCourante?.herites || []}});
   if ((await readText(c.dir, INDEX_PATH)) === null) await writeFile(c.dir, INDEX_PATH, csvBuild([]));
-  await appendJournal("Inscription contrat", `${nom} – secteur ${sect}`);
+  log("#contratLog", `Activé : ${c.nom} – ${mode === "wbs" ? "WBS" : "numéro de contrat"} – secteurs ${visés.join(", ")}`);
+  await appendJournal("Activation contrat", `${c.nom} – ${mode} – ${visés.join(", ")}`);
   await scanContrats(); await scanBoite();
 }
-async function ecrireInfo(d, numero, nom, sect){
-  const info = {numero, dossier:nom, sect, secteurs:[sect], entite: numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD", inscrit_le: nowIso(), inscrit_par: localStorage.getItem("an.deposant") || ""};
+async function ecrireInfo(d, numero, nom, opts){
+  const prev = await readText(d, INFO_PATH).then(t => t ? JSON.parse(t) : {}).catch(() => ({}));
+  const info = {...prev, numero, dossier:nom, secteur_defaut: sectDefaut(numero), entite: numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD",
+    ...opts, active: true, active_le: nowIso(), active_par: localStorage.getItem("an.deposant") || ""};
+  delete info.sect;
   await writeFile(d, INFO_PATH, JSON.stringify(info, null, 2));
 }
 function majPreview(){
@@ -437,7 +614,7 @@ async function creerContrat(){
   try {
     const d = await root.getDirectoryHandle(nom, {create:true});
     for (const p of ARBO) await dir(d, p.split("/"), true);
-    await ecrireInfo(d, num, nom, sect);
+    await ecrireInfo(d, num, nom, {mode_secteur: "contrat", secteurs: sect === sectDefaut(num) ? [] : [{code: sect, description: ""}]});
     await writeFile(d, INDEX_PATH, csvBuild([]));
     log("#contratLog", `Contrat créé : ${nom} (secteur ${sect}, ${ARBO.length} dossiers)`);
     await appendJournal("Création contrat", `${nom} – secteur ${sect}`);
@@ -448,53 +625,129 @@ async function creerContrat(){
 }
 
 /* ===== Dépôt ===== */
-function addFiles(list){
-  for (const f of list) if (!pending.some(p => p.file.name === f.name && p.file.size === f.size)) pending.push({file:f, lot:null});
+const IGNORES = ["desktop.ini","thumbs.db",".ds_store"];
+const isLeve = n => EXT_LEVE.includes(ext(n));
+// Clé de lot d'un fichier de levé : les 16 premiers caractères si le nom est suivi d'un suffixe (_MODIF, _V2…)
+function leveKey(n){ const b = base(n).toUpperCase(); const m = b.match(/^([A-Z0-9]{16})(_.*)?$/); return m ? m[1] : b; }
+// Choisit le fichier de levé principal : nom exact (sans suffixe), sinon le premier .txt/.csv
+function choisirLeve(noms, indice){
+  const t = noms.filter(n => !n.includes("/") && isLeve(n));
+  const ind = indice ? indice.toUpperCase() : null;
+  return t.find(n => ind && base(n).toUpperCase() === ind) || t.find(n => /^[A-Z0-9]{16}$/i.test(base(n))) || t.find(n => !/_MODIF$/i.test(base(n))) || t[0] || null;
+}
+function addItems(items){
+  for (const it of items){
+    if (IGNORES.includes(it.file.name.toLowerCase())) continue;
+    if (!pending.some(p => p.rel === it.rel && p.groupe === it.groupe && p.file.size === it.file.size)) pending.push({lot:null, ...it});
+  }
   buildLots(); renderPending();
 }
+const addFiles = list => addItems([...list].map(f => ({file:f, rel:f.name, groupe:null})));
+async function collectDir(h, groupe, prefix, out){
+  for await (const [name, x] of h.entries()){
+    if (x.kind === "file") out.push({file: await x.getFile(), rel: prefix + name, groupe});
+    else await collectDir(x, groupe, prefix + name + "/", out);
+  }
+  return out;
+}
+async function addDirectory(h){ addItems(await collectDir(h, h.name, "", [])); }
 let lots = [];
 function buildLots(){
-  const leves = pending.filter(p => EXT_LEVE.includes(ext(p.file.name)));
   const prev = Object.fromEntries(lots.map(l => [l.key, l]));
-  lots = leves.map(p => { const k = base(p.file.name).toUpperCase(); const pr = parseLeve(p.file.name); const c = contratParSect(pr.sect);
-    return {key:k, nom:k, leve:p, parse:pr, contrat: prev[k]?.contrat ?? (c ? c.nom : ""), remarque: prev[k]?.remarque ?? ""}; });
-  const autres = pending.filter(p => !EXT_LEVE.includes(ext(p.file.name)));
-  if (!lots.length && autres.length){
-    const k = "DOC"; lots = [{key:k, nom:`DOC_${stamp()}`, leve:null, parse:null, contrat: prev[k]?.contrat ?? "", remarque: prev[k]?.remarque ?? ""}];
+  const mk = (key, nom, leveNom, groupe) => { const pr = leveNom ? parseLeveFichier(leveNom) : null; const c = pr && contratParSect(pr.sect);
+    return {key, nom, groupe, leveNom, parse:pr, contrat: prev[key]?.contrat ?? (c ? c.nom : ""), remarque: prev[key]?.remarque ?? "", instrument: prev[key]?.instrument ?? "", corr: prev[key]?.corr ?? "", motif: prev[key]?.motif ?? ""}; };
+  lots = [];
+  // 1. Dossiers glissés : un dossier = un lot, nommé comme le dossier
+  for (const g of [...new Set(pending.filter(p => p.groupe).map(p => p.groupe))]){
+    const membres = pending.filter(p => p.groupe === g);
+    const lv = choisirLeve(membres.map(p => p.rel), g);
+    const key = "DIR:" + g; membres.forEach(p => p.lot = key);
+    lots.push(mk(key, g, lv, g));
   }
+  // 2. Fichiers de levé isolés : regroupés par leurs 16 premiers caractères (le _MODIF suit son levé)
+  const libres = pending.filter(p => !p.groupe);
+  const parCle = {};
+  for (const p of libres.filter(p => isLeve(p.file.name))) (parCle[leveKey(p.file.name)] ??= []).push(p);
+  for (const [k, ps] of Object.entries(parCle)){ ps.forEach(p => p.lot = k); lots.push(mk(k, k, choisirLeve(ps.map(p => p.file.name), k), null)); }
+  // 3. Autres fichiers isolés : rattachés à un lot, ou lot de documents
+  const autres = libres.filter(p => !isLeve(p.file.name));
+  if (!lots.length && autres.length) lots.push({...mk("DOC", `DOC_${stamp()}`, null, null), nom: prev.DOC?.nom ?? `DOC_${stamp()}`});
   for (const a of autres) if (!a.lot || !lots.some(l => l.key === a.lot)) a.lot = lots[0]?.key ?? null;
+  for (const l of lots){
+    const rels = membres(l).map(p => p.rel);
+    l.demander = rels.some(isDBX);
+    l.gnssSeul = !l.demander && rels.some(isGnss);
+    if (l.gnssSeul) l.instrument = "GNSS";
+  }
 }
+const membres = l => pending.filter(p => p.lot === l.key);
+function corrMessage(l){
+  if (!l.corr) return `<span class="muted">Corrigez le nom, ou inscrivez un motif pour déposer tel quel.</span>`;
+  if (l.corr.length !== 16) return `<span style="color:var(--warn)">${l.corr.length} caractère(s) sur 16</span>`;
+  const pc = parseLeve(l.corr + ".txt");
+  return pc.ok ? `<span style="color:var(--ok)">✓ Conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${ARPENTEURS[pc.ss] ? " · " + esc(ARPENTEURS[pc.ss]) : ""}</span>`
+    : `<span style="color:var(--warn)">${pc.erreurs.map(esc).join(" · ")}</span>`;
+}
+const corrValide = l => l.corr && l.corr.length === 16 && parseLeve(l.corr + ".txt").ok;
 function renderPending(){
   const box = $("#lotsPreview");
   $("#depotActions").hidden = !pending.length;
   if (!pending.length){ box.innerHTML = ""; return; }
-  const optsC = sel => `<option value="">— choisir le contrat —</option>` + contrats.filter(c => c.info).map(c => `<option value="${esc(c.nom)}" ${c.nom===sel?"selected":""}>${esc(c.nom)}</option>`).join("");
+  const optsC = sel => `<option value="">— choisir le contrat —</option>` + contrats.map(c => `<option value="${esc(c.nom)}" ${c.nom===sel?"selected":""}>${esc(c.nom)}</option>`).join("");
   box.innerHTML = lots.map(l => {
-    const fichiers = pending.filter(p => p === l.leve || (p.lot === l.key && p !== l.leve));
-    const etat = !l.parse ? `<span class="state warn">Documents sans levé</span>` : l.parse.ok ? `<span class="state ok">Nom conforme</span>` : `<span class="state warn">À vérifier</span>`;
+    const ms = membres(l);
+    const haut = ms.filter(p => !p.rel.includes("/")), sous = ms.length - haut.length;
+    const dossiers = [...new Set(ms.filter(p => p.rel.includes("/")).map(p => p.rel.split("/")[0]))];
+    const modif = haut.find(p => /_MODIF$/i.test(base(p.file.name)));
+    const etat = !l.parse ? `<span class="state warn">${l.groupe ? "Aucun levé trouvé" : "Documents sans levé"}</span>` : l.parse.ok ? `<span class="state ok">Conforme</span>` : `<span class="state warn">À vérifier</span>`;
+    const pr = l.parse;
     return `<div class="lot">
       <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>${etat}</div>
-      ${l.parse ? `<div class="chips">${l.parse.date?`<span class="chip">${l.parse.date}</span>`:""}${l.parse.sect?`<span class="chip">Secteur ${esc(l.parse.sect)}</span>`:""}${TYPES[l.parse.typeNum]?`<span class="chip">${TYPES[l.parse.typeNum]}</span>`:""}${NAT[l.parse.nat]?`<span class="chip">${esc(l.parse.nat)} – ${esc(NAT[l.parse.nat])}</span>`:""}${ARPENTEURS[l.parse.ss]?`<span class="chip">${esc(ARPENTEURS[l.parse.ss])}</span>`:""}</div>` : ""}
-      ${l.parse && l.parse.erreurs.length ? `<ul class="err">${l.parse.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+      ${pr ? `<div class="chips">${pr.date?`<span class="chip">${pr.date}</span>`:""}${pr.sect?`<span class="chip">Secteur ${esc(pr.sect)}</span>`:""}${TYPES[pr.typeNum]?`<span class="chip">${TYPES[pr.typeNum]}</span>`:""}${NAT[pr.nat]?`<span class="chip">${esc(pr.nat)} – ${esc(NAT[pr.nat])}</span>`:""}${ARPENTEURS[pr.ss]?`<span class="chip">${esc(ARPENTEURS[pr.ss])}</span>`:""}${modif?`<span class="chip">Version _MODIF incluse</span>`:""}</div>` : ""}
+      ${pr && pr.erreurs.length ? `<ul class="err">${pr.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+      ${pr && !pr.ok && l.leveNom ? `<div class="corr">
+        <div class="row" style="align-items:flex-start">
+          <div class="field"><label>Nom corrigé du fichier de levé</label><input data-corr="${esc(l.key)}" value="${esc(l.corr)}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
+          <div class="field" style="flex:1;min-width:220px"><label>ou motif si le nom ne peut pas être corrigé</label><input data-motif="${esc(l.key)}" value="${esc(l.motif)}" placeholder="Ex. code de nature à créer, à valider avec le calculateur"></div>
+        </div>
+        <p class="small" style="margin:4px 0 0" data-corrmsg="${esc(l.key)}">${corrMessage(l)}</p>
+        <p class="small muted" style="margin:2px 0 0">Seul le fichier d'exportation (.txt et sa version _MODIF) est renommé, pour Civil 3D. Les données brutes gardent le nom créé au terrain, et le nom d'origine reste inscrit à l'index.</p>
+      </div>` : ""}
       <div class="row" style="margin-top:8px">
         <div class="field"><label>Contrat</label><select data-lotc="${esc(l.key)}">${optsC(l.contrat)}</select></div>
         <div class="field" style="flex:1;min-width:220px"><label>Remarque pour le calculateur</label><input data-lotr="${esc(l.key)}" value="${esc(l.remarque)}" placeholder="Ex. pile de réserve MG-112 km 490"></div>
       </div>
-      <p class="small muted" style="margin:8px 0 0">${fichiers.length} fichier(s) : ${fichiers.map(p => esc(p.file.name)).join(", ")}</p>
+      ${l.demander ? `<div class="row" style="margin-top:8px;align-items:center"><div class="field"><label>Données brutes : méthode dominante</label>
+        <select data-loti="${esc(l.key)}"><option value="">— à préciser —</option><option ${l.instrument==="Conventionnel"?"selected":""}>Conventionnel</option><option ${l.instrument==="GNSS"?"selected":""}>GNSS</option></select></div>
+        <p class="small muted" style="margin:0;flex:1;min-width:220px">Ex. 3 points GPS pour partir 500 points conventionnels = Conventionnel. Un levé GPS complété de quelques points conventionnels = GNSS.</p></div>`
+        : l.gnssSeul ? `<div class="chips"><span class="chip">Données brutes GNSS</span></div>` : ""}
+      <p class="small muted" style="margin:8px 0 0">${l.leveNom ? `Levé : <b>${esc(l.leveNom)}</b> · ` : ""}${haut.length} fichier(s) : ${haut.map(p => esc(p.file.name)).join(", ")}${sous ? ` · plus ${sous} fichier(s) dans ${dossiers.map(esc).join(", ")}` : ""}</p>
     </div>`;
   }).join("");
-  const sansLot = pending.filter(p => !EXT_LEVE.includes(ext(p.file.name)));
-  if (lots.length > 1 && sansLot.length){
-    box.insertAdjacentHTML("beforeend", `<div class="lot"><h3>Rattacher les photos et documents</h3>${sansLot.map((p,i) => `<div class="row small" style="margin-top:6px;align-items:center"><span style="min-width:220px">${esc(p.file.name)}</span><select data-att="${pending.indexOf(p)}">${lots.map(l => `<option value="${esc(l.key)}" ${p.lot===l.key?"selected":""}>${esc(l.nom)}</option>`).join("")}</select></div>`).join("")}</div>`);
+  const libres = pending.filter(p => !p.groupe && !isLeve(p.file.name));
+  if (lots.length > 1 && libres.length){
+    box.insertAdjacentHTML("beforeend", `<div class="lot"><h3>Rattacher les photos et documents</h3>${libres.map(p => `<div class="row small" style="margin-top:6px;align-items:center"><span style="min-width:220px">${esc(p.file.name)}</span><select data-att="${pending.indexOf(p)}">${lots.map(l => `<option value="${esc(l.key)}" ${p.lot===l.key?"selected":""}>${esc(l.nom)}</option>`).join("")}</select></div>`).join("")}</div>`);
   }
   box.querySelectorAll("[data-lotc]").forEach(s => s.onchange = () => { lots.find(l => l.key === s.dataset.lotc).contrat = s.value; });
+  box.querySelectorAll("[data-corr]").forEach(s => s.oninput = () => {
+    const l = lots.find(x => x.key === s.dataset.corr); s.value = s.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); l.corr = s.value;
+    const pc = l.corr.length === 16 ? parseLeve(l.corr + ".txt") : null;
+    if (pc && pc.ok && !l.contrat){ l.contrat = contratParSect(pc.sect)?.nom || ""; const sel = box.querySelector(`[data-lotc="${CSS.escape(l.key)}"]`); if (sel) sel.value = l.contrat; }
+    box.querySelector(`[data-corrmsg="${CSS.escape(l.key)}"]`).innerHTML = corrMessage(l);
+  });
+  box.querySelectorAll("[data-motif]").forEach(s => s.oninput = () => { lots.find(l => l.key === s.dataset.motif).motif = s.value; });
+  box.querySelectorAll("[data-loti]").forEach(s => s.onchange = () => { lots.find(l => l.key === s.dataset.loti).instrument = s.value; });
   box.querySelectorAll("[data-lotr]").forEach(s => s.oninput = () => { lots.find(l => l.key === s.dataset.lotr).remarque = s.value; });
   box.querySelectorAll("[data-att]").forEach(s => s.onchange = () => { pending[+s.dataset.att].lot = s.value; renderPending(); });
 }
 async function deposer(){
-  if (!root) return alert("Choisissez d'abord le dossier 01_ACTIFS.");
+  if (!root) return alert("Choisissez d'abord le dossier des contrats.");
   const qui = $("#deposant").value; if (!qui) return alert("Indiquez qui dépose les fichiers.");
   localStorage.setItem("an.deposant", qui);
+  const aCorriger = lots.filter(l => l.parse && !l.parse.ok && l.leveNom && !corrValide(l) && !l.motif.trim());
+  if (aCorriger.length) return alert(`Nom de levé non conforme : corrigez-le, ou inscrivez un motif pour le déposer tel quel.\n\n${aCorriger.map(l => l.leveNom).join("\n")}`);
+  const sansInstr = lots.filter(l => l.demander && !l.instrument);
+  if (sansInstr.length) return alert(`Précisez la méthode dominante (Conventionnel ou GNSS) pour : ${sansInstr.map(l => l.nom).join(", ")}`);
   const manque = lots.filter(l => !l.contrat);
   if (manque.length && !confirm(`${manque.length} lot(s) sans contrat : ils resteront dans la boîte jusqu'à ce qu'un calculateur choisisse le contrat. Continuer ?`)) return;
   $("#btnDeposer").disabled = true;
@@ -502,21 +755,30 @@ async function deposer(){
   const faits = [];
   for (const l of lots){
     try {
-      if (await exists(depot, l.nom)){ log("#depotLog", `Refusé : ${l.nom} est déjà dans la boîte (doublon).`); continue; }
-      const d = await depot.getDirectoryHandle(l.nom, {create:true});
-      const fichiers = pending.filter(p => p === l.leve || (p.lot === l.key && p !== l.leve));
-      for (const p of fichiers){ const w = await (await d.getFileHandle(p.file.name, {create:true})).createWritable(); await w.write(p.file); await w.close(); }
-      const meta = {lot:l.nom, contrat:l.contrat, leve: l.leve ? l.leve.file.name : null, fichiers: fichiers.map(p => p.file.name),
-        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, validation: l.parse ? (l.parse.ok ? "Nom conforme" : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
+      const corrige = l.parse && !l.parse.ok && corrValide(l);
+      const nomLot = corrige ? l.corr : l.nom;
+      const origBase = l.leveNom ? base(l.leveNom).toUpperCase() : null;
+      // Renomme uniquement le fichier d'exportation et ses variantes (_MODIF) au premier niveau; les données brutes gardent leur nom
+      const nouveauNom = p => { if (!corrige || p.rel.includes("/") || !isLeve(p.file.name)) return p.rel;
+        const b = base(p.file.name).toUpperCase(); return b.startsWith(origBase) ? l.corr + base(p.file.name).slice(origBase.length) + ext(p.file.name) : p.rel; };
+      if (await exists(depot, nomLot)){ log("#depotLog", `Refusé : ${nomLot} est déjà dans la boîte (doublon).`); continue; }
+      const d = await depot.getDirectoryHandle(nomLot, {create:true});
+      const ms = membres(l);
+      for (const p of ms){
+        const parts = nouveauNom(p).split("/");
+        const sd = await dir(d, parts.slice(0,-1), true);
+        const w = await (await sd.getFileHandle(parts.at(-1), {create:true})).createWritable(); await w.write(p.file); await w.close();
+      }
+      const leveFinal = l.leveNom ? (corrige ? l.corr + ext(l.leveNom) : l.leveNom) : null;
+      const meta = {lot:nomLot, contrat:l.contrat, leve: leveFinal, nom_terrain: corrige ? l.leveNom : null, motif: (!corrige && l.parse && !l.parse.ok) ? l.motif.trim() : "", fichiers: ms.map(p => nouveauNom(p)),
+        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Conforme" : corrige ? `Conforme – nom corrigé au dépôt (terrain : ${l.leveNom})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
       await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
-      log("#depotLog", `Déposé : ${l.nom} (${fichiers.length} fichier(s))${l.contrat ? " → " + l.contrat : ""}`);
-      await appendJournal("Dépôt", `${l.nom} – ${fichiers.length} fichier(s) – ${l.contrat || "contrat à choisir"}`);
+      log("#depotLog", `Déposé : ${nomLot}${corrige ? ` (renommé, terrain : ${l.leveNom})` : ""} – ${ms.length} fichier(s)${l.contrat ? " → " + l.contrat : ""}`);
+      await appendJournal("Dépôt", `${l.nom} – ${ms.length} fichier(s) – ${l.contrat || "contrat à choisir"}`);
       faits.push(l.key);
     } catch(e){ log("#depotLog", `Échec pour ${l.nom} : ${e.message}`); }
   }
-  const retires = new Set();
-  for (const l of lots.filter(x => faits.includes(x.key))){ if (l.leve) retires.add(l.leve); pending.filter(p => p.lot === l.key).forEach(p => retires.add(p)); }
-  pending = pending.filter(p => !retires.has(p));
+  pending = pending.filter(p => !faits.includes(p.lot));
   buildLots(); renderPending();
   $("#btnDeposer").disabled = false;
   await scanBoite();
@@ -531,15 +793,15 @@ async function scanBoite(){
     if (name === SYS || name.startsWith(".") || name.startsWith("~")) continue;
     if (h.kind === "directory"){
       let meta = null; try { const t = await readText(h, ["_lot.json"]); if (t) meta = JSON.parse(t); } catch {}
-      const fichiers = []; for await (const [n, x] of h.entries()) if (x.kind === "file" && n !== "_lot.json") fichiers.push(n);
-      const leve = meta?.leve || fichiers.find(n => EXT_LEVE.includes(ext(n))) || null;
-      const pr = leve ? parseLeve(leve) : null;
+      const fichiers = [], sousDossiers = []; for await (const [n, x] of h.entries()){ if (x.kind === "file" && n !== "_lot.json") fichiers.push(n); else if (x.kind === "directory") sousDossiers.push(n); }
+      const leve = meta?.leve || choisirLeve(fichiers, name) || null;
+      const pr = leve ? parseLeveFichier(leve) : null;
       let contrat = meta?.contrat || (pr && contratParSect(pr.sect)?.nom) || "";
       let date = meta?.date_depot; if (!date){ try { const f = leve ? await (await h.getFileHandle(leve)).getFile() : null; date = f ? new Date(f.lastModified).toISOString().replace("T"," ").slice(0,19) : ""; } catch { date = ""; } }
-      boite.push({nom:name, handle:h, dossier:true, meta, fichiers, leve, parse:pr, contrat, date});
+      boite.push({nom:name, handle:h, dossier:true, meta, fichiers, sousDossiers, leve, parse:pr, contrat, date});
     } else {
       // fichier déposé directement dans la boîte (sans passer par la page)
-      const pr = EXT_LEVE.includes(ext(name)) ? parseLeve(name) : null;
+      const pr = EXT_LEVE.includes(ext(name)) ? parseLeveFichier(name) : null;
       const f = await h.getFile();
       boite.push({nom:name, handle:h, dossier:false, meta:null, fichiers:[name], leve: pr ? name : null, parse:pr, contrat: pr && contratParSect(pr.sect)?.nom || "", date: new Date(f.lastModified).toISOString().replace("T"," ").slice(0,19)});
     }
@@ -557,7 +819,7 @@ function renderBoite(){
   const groupes = {};
   for (const l of boite) (groupes[l.contrat || ""] ??= []).push(l);
   const ordre = Object.keys(groupes).sort((a,b) => (a===""?-1:b===""?1:a.localeCompare(b)));
-  const optsC = sel => `<option value="">— choisir —</option>` + contrats.filter(c => c.info).map(c => `<option value="${esc(c.nom)}" ${c.nom===sel?"selected":""}>${esc(c.nom)}</option>`).join("");
+  const optsC = sel => `<option value="">— choisir —</option>` + contrats.map(c => `<option value="${esc(c.nom)}" ${c.nom===sel?"selected":""}>${esc(c.nom)}</option>`).join("");
   box.innerHTML = ordre.map(k => {
     const ls = groupes[k]; const n = ls.filter(l => l.date > vu).length;
     return `<div class="group">
@@ -566,17 +828,60 @@ function renderBoite(){
         ${k ? `<button class="btn small go" data-tout="${esc(k)}">Répartir les ${ls.length} lot(s)</button>` : ""}</div>
       ${ls.map(l => `<div class="lot">
         <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>
-          <span>${l.date > vu ? `<span class="state new">Nouveau</span> ` : ""}${!l.parse ? `<span class="state warn">Documents</span>` : l.parse.ok ? `<span class="state ok">Nom conforme</span>` : `<span class="state warn">À vérifier</span>`}</span></div>
-        <p class="small muted" style="margin:4px 0">${esc(l.date)} · ${esc(l.meta?.depose_par || "déposé directement dans le dossier")} · ${l.fichiers.length} fichier(s)${l.meta?.remarque ? ` · « ${esc(l.meta.remarque)} »` : ""}</p>
+          <span>${l.date > vu ? `<span class="state new">Nouveau</span> ` : ""}${!l.parse ? `<span class="state warn">Documents</span>` : l.parse.ok ? `<span class="state ok">Conforme</span>` : `<span class="state warn">À vérifier</span>`}</span></div>
+        <p class="small muted" style="margin:4px 0">${esc(l.date)} · ${esc(l.meta?.depose_par || "déposé directement dans le dossier")} · ${l.fichiers.length} fichier(s)${l.meta?.remarque ? ` · « ${esc(l.meta.remarque)} »` : ""}${l.meta?.nom_terrain ? ` · renommé au dépôt (terrain : ${esc(l.meta.nom_terrain)})` : ""}</p>
+        ${l.meta?.motif ? `<p class="small" style="margin:4px 0;color:var(--warn)">Motif de l'arpenteur : ${esc(l.meta.motif)}</p>` : ""}
         ${l.parse && !l.parse.ok ? `<ul class="err">${l.parse.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
+        ${l.parse && !l.parse.ok && l.leve ? `<div class="corr" data-corrbox="${esc(l.nom)}" hidden>
+          <div class="row" style="align-items:flex-end">
+            <div class="field"><label>Nom corrigé</label><input data-bcorr="${esc(l.nom)}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
+            <button class="btn small go" data-bapp="${esc(l.nom)}" disabled>Appliquer</button>
+          </div>
+          <p class="small" style="margin:4px 0 0" data-bmsg="${esc(l.nom)}"><span class="muted">Terrain : ${esc(l.leve)}. Seul le fichier d'exportation sera renommé.</span></p>
+        </div>` : ""}
         <div class="row" style="margin-top:6px"><select data-bc="${esc(l.nom)}">${optsC(l.contrat)}</select>
-          <button class="btn small go" data-rep="${esc(l.nom)}" ${l.contrat ? "" : "disabled"}>Répartir</button></div>
+          <button class="btn small go" data-rep="${esc(l.nom)}" ${l.contrat ? "" : "disabled"}>Répartir</button>
+          ${l.parse && !l.parse.ok && l.leve ? `<button class="btn small" data-bcor="${esc(l.nom)}">Corriger le nom</button>` : ""}</div>
       </div>`).join("")}
     </div>`;
   }).join("");
   box.querySelectorAll("[data-bc]").forEach(s => s.onchange = () => { const l = boite.find(x => x.nom === s.dataset.bc); l.contrat = s.value; renderBoite(); });
+  box.querySelectorAll("[data-bcor]").forEach(b => b.onclick = () => { const cb = box.querySelector(`[data-corrbox="${CSS.escape(b.dataset.bcor)}"]`); cb.hidden = !cb.hidden; if (!cb.hidden) cb.querySelector("input").focus(); });
+  box.querySelectorAll("[data-bcorr]").forEach(i => i.oninput = () => {
+    i.value = i.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+    const l = {corr: i.value}; const ok = corrValide(l);
+    box.querySelector(`[data-bmsg="${CSS.escape(i.dataset.bcorr)}"]`).innerHTML = corrMessage(l);
+    box.querySelector(`[data-bapp="${CSS.escape(i.dataset.bcorr)}"]`).disabled = !ok;
+  });
+  box.querySelectorAll("[data-bapp]").forEach(b => b.onclick = async () => { b.disabled = true; await corrigerDansBoite(boite.find(x => x.nom === b.dataset.bapp), box.querySelector(`[data-bcorr="${CSS.escape(b.dataset.bapp)}"]`).value); });
   box.querySelectorAll("[data-rep]").forEach(b => b.onclick = async () => { b.disabled = true; await repartir([boite.find(x => x.nom === b.dataset.rep)]); });
   box.querySelectorAll("[data-tout]").forEach(b => b.onclick = async () => { b.disabled = true; await repartir(boite.filter(x => x.contrat === b.dataset.tout)); });
+}
+// Correction du nom par le calculateur, dans la boîte (lots déposés directement ou non corrigés au dépôt)
+async function corrigerDansBoite(l, corr){
+  const depot = await dir(root, [DEPOT]);
+  if (await exists(depot, corr)) return alert(`Un lot nommé ${corr} est déjà dans la boîte (doublon).`);
+  const origBase = base(l.leve).toUpperCase();
+  const renomme = n => isLeve(n) && base(n).toUpperCase().startsWith(origBase) ? corr + base(n).slice(origBase.length) + ext(n) : n;
+  try {
+    const d = await depot.getDirectoryHandle(corr, {create:true});
+    if (l.dossier){
+      for await (const [n, h] of l.handle.entries()){
+        if (n === "_lot.json") continue;
+        if (h.kind === "directory") await copyDir(h, await d.getDirectoryHandle(n, {create:true}));      // données brutes : nom de terrain conservé
+        else { const w = await (await d.getFileHandle(renomme(n), {create:true})).createWritable(); await w.write(await h.getFile()); await w.close(); }
+      }
+    } else { const w = await (await d.getFileHandle(renomme(l.nom), {create:true})).createWritable(); await w.write(await l.handle.getFile()); await w.close(); }
+    const meta = {...(l.meta || {}), lot: corr, leve: corr + ext(l.leve), nom_terrain: l.meta?.nom_terrain || l.leve, contrat: l.contrat || "",
+      fichiers: l.fichiers.map(renomme), date_depot: l.meta?.date_depot || l.date, depose_par: l.meta?.depose_par || "",
+      corrige_par: localStorage.getItem("an.deposant") || "", corrige_le: nowIso(), validation: `Conforme – nom corrigé dans la boîte (terrain : ${l.meta?.nom_terrain || l.leve})`};
+    const pc = parseLeve(corr + ".txt"); if (!meta.contrat) meta.contrat = contratParSect(pc.sect)?.nom || "";
+    await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
+    await depot.removeEntry(l.nom, {recursive:true});
+    log("#boiteLog", `Corrigé : ${l.leve} → ${corr}${ext(l.leve)}`);
+    await appendJournal("Correction de nom", `${l.leve} → ${corr}${ext(l.leve)}`);
+  } catch(e){ log("#boiteLog", `Échec de la correction de ${l.nom} : ${e.message}`); }
+  await scanBoite();
 }
 async function repartir(liste){
   const depot = await dir(root, [DEPOT]);
@@ -598,17 +903,18 @@ async function repartir(liste){
         else { const w = await (await d.getFileHandle(l.nom, {create:true})).createWritable(); await w.write(await l.handle.getFile()); await w.close(); }
         const photos = l.fichiers.filter(n => EXT_PHOTO.includes(ext(n)));
         const carnets = l.fichiers.filter(n => EXT_CARNET.includes(ext(n)));
-        const autres = l.fichiers.filter(n => n !== l.leve && !photos.includes(n) && !carnets.includes(n));
+        const modif = l.fichiers.find(n => /_MODIF$/i.test(base(n)) && isLeve(n)) || "";
+        const autres = l.fichiers.filter(n => n !== l.leve && n !== modif && !photos.includes(n) && !carnets.includes(n)).concat((l.sousDossiers || []).map(n => `[dossier] ${n}`));
         const p = l.parse;
         rows.push({
           Statut: !p || p.ok ? "À traiter" : "À vérifier",
-          NomFichier: l.leve || "(documents)", Date_Leve: p?.date || "", Secteur: p?.sect || "",
+          NomFichier: l.leve || "(documents)", Nom_terrain: l.meta?.nom_terrain || "", Date_Leve: p?.date || "", Secteur: p?.sect || "",
           Type: p ? (TYPES[p.typeNum] || p.typeNum || "") : "Documents terrain", NAT: p?.nat || "", Nature: p ? (NAT[p.nat] || "") : "",
           SS: p?.ss || "", Arpenteur: p ? (ARPENTEURS[p.ss] || "") : "", Remarques: l.meta?.remarque || "",
-          Photos: photos.length ? `${photos.length} photo(s)` : "", Carnet: carnets.join(", "), Autres_fichiers: autres.join(", "),
+          Photos: photos.length ? `${photos.length} photo(s)` : "", Carnet: carnets.join(", "), Version_modifiee: modif, Instrument: l.meta?.instrument || "", Autres_fichiers: autres.join(", "),
           Dossier: `00_LEVES_A_TRAITER\\${nomLot}`, Depose_par: l.meta?.depose_par || "", Date_Depot: l.date, Date_Repartition: nowIso(),
           Traite_par:"", Date_Traitement:"", Dessin:"", Mis_dans_DWG:"", Verifie:"",
-          Validation: !p ? "Documents sans levé" : p.ok ? "Nom conforme" : p.erreurs.join(" | ")
+          Validation: !p ? "Documents sans levé" : p.ok ? (l.meta?.nom_terrain ? (l.meta.validation && l.meta.validation.startsWith("Conforme") ? l.meta.validation : `Conforme – nom corrigé au dépôt (terrain : ${l.meta.nom_terrain})`) : "Conforme") : p.erreurs.join(" | ") + (l.meta?.motif ? ` | Motif de l'arpenteur : ${l.meta.motif}` : "")
         });
         ok.push(l);
       } catch(e){ log("#boiteLog", `Échec pour ${l.nom} : ${e.message}`); }
@@ -628,9 +934,10 @@ async function repartir(liste){
 
 /* ===== Index ===== */
 async function loadIndex(){
+  if (idxDirty && !confirm("Des modifications de l'index ne sont pas enregistrées. Les abandonner ?")){ $("#idxContrat").value = idxContrat?.nom || ""; return; }
   const nom = $("#idxContrat").value; idxContrat = contrats.find(c => c.nom === nom);
   idxDirty = false; $("#btnIdxSave").disabled = true;
-  if (!idxContrat){ $("#idxTable").innerHTML = `<p class="empty">Aucun contrat inscrit. Créez ou inscrivez un contrat dans l'onglet Contrats.</p>`; $("#idxPath").textContent = ""; return; }
+  if (!idxContrat){ $("#idxTable").innerHTML = `<p class="empty">Aucun contrat dans ce dossier. Créez-en un dans l'onglet Contrats.</p>`; $("#idxPath").textContent = ""; return; }
   $("#idxPath").textContent = `${idxContrat.nom}\\01_LEVES\\INDEX_LEVES.csv – s'ouvre aussi dans Excel (fermez-le avant d'enregistrer ici).`;
   const t = await readText(idxContrat.dir, INDEX_PATH);
   idxRows = t ? csvParse(t) : [];
@@ -640,23 +947,219 @@ function renderIndex(){
   const f = $("#idxFiltre").value;
   const vis = idxRows.map((r,i) => [r,i]).filter(([r]) => !f || r.Statut === f);
   if (!idxRows.length){ $("#idxTable").innerHTML = `<p class="empty">L'index est vide. Les levés y apparaissent dès qu'ils sont répartis depuis la boîte de dépôt.</p>`; return; }
-  const cols = ["NomFichier","Date_Leve","Secteur","Type","Nature","Arpenteur","Remarques","Photos","Carnet","Depose_par","Date_Repartition","Traite_par","Dessin","Mis_dans_DWG","Validation"];
+  const cols = ["NomFichier","Remarques","Traite_par","Mis_dans_DWG","Dessin","Verifie","Instrument","Nom_terrain","Date_Leve","Secteur","Type","Nature","Arpenteur","Carnet","Version_modifiee","Depose_par","Date_Repartition","Date_Traitement","Validation"];
   const cls = s => s === "Traité" ? "ok" : s === "À vérifier" ? "warn" : "new";
+  const enTransit = r => (r.Dossier || "").startsWith("00_LEVES_A_TRAITER");
+  const classable = r => enTransit(r) && (r.NomFichier === "(documents)" || parseLeveFichier(r.NomFichier).ok);
   $("#idxTable").innerHTML = `<p class="small muted">${vis.length} ligne(s) sur ${idxRows.length} · ${idxRows.filter(r => r.Statut === "À traiter").length} à traiter</p>
-   <div class="tablewrap"><table><thead><tr><th>Statut</th>${cols.map(c => `<th>${c.replace(/_/g," ")}</th>`).join("")}</tr></thead><tbody>
+   <div class="tablewrap"><table><thead><tr><th>Statut</th><th>Classement</th><th>Accès</th>${cols.map(c => `<th>${c.replace(/_/g," ")}</th>`).join("")}</tr></thead><tbody>
    ${vis.map(([r,i]) => `<tr><td><select data-st="${i}" class="state ${cls(r.Statut)}">${["À traiter","À vérifier","Traité"].map(s => `<option ${s===r.Statut?"selected":""}>${s}</option>`).join("")}</select></td>
-     ${cols.map(c => `<td class="${["Remarques","Validation"].includes(c)?"wrap":""}">${esc(r[c])}</td>`).join("")}</tr>`).join("")}
-   </tbody></table></div>`;
-  $("#idxTable").querySelectorAll("[data-st]").forEach(s => s.onchange = () => {
+     <td>${enTransit(r) ? (classable(r) ? `<button class="btn small go" data-cl="${i}">Classer</button>` : `<span class="state warn" title="Corrigez le nom du fichier avant de classer">Nom à corriger</span>`) : `<span class="state ok">Classé</span>`}</td>
+     <td>${(r.Chemin_Photos || (enTransit(r) && r.Photos)) ? `<button class="btn small" data-ph="${i}">${esc(r.Photos || "Photos")}</button> ` : ""}${r.Chemin_Brutes ? `<button class="btn small" data-cp="${i}:Chemin_Brutes" title="${esc(r.Chemin_Brutes)}">Brutes</button> ` : ""}${r.Chemin_Leve ? `<button class="btn small" data-cp="${i}:Chemin_Leve" title="${esc(r.Chemin_Leve)}">Levé</button>` : ""}</td>
+     ${cols.map(c => c === "Validation" ? `<td class="wrap">${validationTag(r)}</td>` : EDIT[c] ? `<td class="ed">${champ(i, c, r[c])}</td>` : `<td>${esc(r[c])}</td>`).join("")}</tr>`).join("")}
+   </tbody></table></div>
+   <datalist id="dlArp">${Object.values(ARPENTEURS).map(n => `<option value="${esc(n)}">`).join("")}</datalist>
+   <p class="small muted" style="margin:6px 0 0">Colonnes modifiables : Remarques, Traité par, Mis dans DWG, Dessin, Vérifié et Instrument. Les autres sont la trace du dépôt et ne se modifient pas ici. N'oubliez pas « Enregistrer les modifications ».</p>`;
+  const t = $("#idxTable");
+  t.querySelectorAll("[data-ed]").forEach(el => el.onchange = () => {
+    const [i, c] = el.dataset.ed.split(":"); const r = idxRows[+i];
+    r[c] = el.value.trim();
+    if (c === "Dessin" && r.Dessin && !r.Mis_dans_DWG){ r.Mis_dans_DWG = "Oui"; const s2 = t.querySelector(`[data-ed="${i}:Mis_dans_DWG"]`); if (s2) s2.value = "Oui"; }
+    if (c === "Traite_par" && r.Traite_par && !r.Date_Traitement) r.Date_Traitement = nowIso();
+    idxDirty = true; $("#btnIdxSave").disabled = false; el.closest("td").classList.add("modif");
+  });
+  t.querySelectorAll("[data-cpd]").forEach(b => b.onclick = () => { const v = idxRows[+b.dataset.cpd].Dessin; if (!v) return; if (/^([A-Za-z]:|\\\\)/.test(v)) navigator.clipboard.writeText(v).then(() => { showMsg(`Chemin copié : ${esc(v)}`, "ok"); setTimeout(() => showMsg(""), 4000); }); else copierChemin(v); });
+  t.querySelectorAll("[data-st]").forEach(s => s.onchange = () => {
     const r = idxRows[+s.dataset.st]; r.Statut = s.value;
     if (s.value === "Traité"){ r.Traite_par = localStorage.getItem("an.deposant") || r.Traite_par; r.Date_Traitement = nowIso(); }
     idxDirty = true; $("#btnIdxSave").disabled = false; renderIndex();
   });
+  t.querySelectorAll("[data-cl]").forEach(b => b.onclick = async () => { b.disabled = true; await classer(+b.dataset.cl); });
+  t.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => voirPhotos(idxRows[+b.dataset.ph]));
+  t.querySelectorAll("[data-cp]").forEach(b => b.onclick = () => { const [i,c] = b.dataset.cp.split(":"); copierChemin(idxRows[+i][c]); });
+}
+
+// Champs modifiables de l'index
+const EDIT = {Remarques:"texte", Traite_par:"arpenteur", Mis_dans_DWG:"oui", Dessin:"dessin", Verifie:"oui", Instrument:"instrument"};
+function champ(i, c, v){
+  const k = `data-ed="${i}:${c}"`, val = esc(v || "");
+  const sel = opts => `<select ${k}>${opts.map(o => `<option ${o === (v || "") ? "selected" : ""} value="${esc(o)}">${o || "—"}</option>`).join("")}</select>`;
+  switch (EDIT[c]){
+    case "oui": return sel(["", "Oui", "Non"]);
+    case "instrument": return sel(["", "Conventionnel", "GNSS"]);
+    case "arpenteur": return `<input ${k} list="dlArp" value="${val}" size="14" placeholder="Nom">`;
+    case "dessin": return `<span class="dessin"><input ${k} value="${val}" size="22" placeholder="Nom ou chemin du DWG">${v ? `<button class="btn small" data-cpd="${i}" title="Copier le chemin">⧉</button>` : ""}</span>`;
+    default: return `<input ${k} value="${val}" size="26" placeholder="—">`;
+  }
+}
+// Couleur de la validation selon l'état actuel de la ligne (le texte garde l'historique)
+function validationTag(r){
+  const v = r.Validation || "";
+  const k = r.Statut === "À vérifier" ? "warn" : /^Documents/.test(v) ? "" : "ok";
+  return k ? `<span class="vtag ${k}">${esc(v.replace(/^Nom conforme/, "Conforme"))}</span>` : esc(v);
+}
+// Revalide les lignes « À vérifier » avec les tables actuelles (NAT, arpenteurs, secteurs); l'historique est conservé
+async function revalider(){
+  if (!idxContrat) return;
+  let devenus = 0, toujours = 0;
+  for (const r of idxRows){
+    if (r.Statut !== "À vérifier" || !r.NomFichier || r.NomFichier === "(documents)") continue;
+    const pr = parseLeveFichier(r.NomFichier);
+    if (pr.ok){ r.Statut = "À traiter"; r.Validation = `${r.Validation} | Revalidé le ${nowIso().slice(0,10)} : conforme`; devenus++; }
+    else toujours++;
+  }
+  if (devenus){ idxDirty = true; await saveIndex(); await appendJournal("Revalidation index", `${idxContrat.nom} – ${devenus} ligne(s) devenue(s) conforme(s)`); }
+  renderIndex();
+  showMsg(devenus || toujours ? `Revalidation : ${devenus} ligne(s) devenue(s) conforme(s), ${toujours} toujours à vérifier.` : "Aucune ligne « À vérifier » dans cet index.", devenus ? "ok" : "bad");
+  setTimeout(() => showMsg(""), 5000);
+}
+
+/* ===== Classement selon la norme (étape M-004) ===== */
+async function inventaire(d, prefix = "", out = []){
+  for await (const [n, h] of d.entries()){
+    if (h.kind === "file") out.push({rel: prefix + n, h});
+    else await inventaire(h, prefix + n + "/", out);
+  }
+  return out;
+}
+async function copierVers(cdir, parts, fileHandle){
+  const d = await dir(cdir, parts.slice(0,-1), true);
+  const w = await (await d.getFileHandle(parts.at(-1), {create:true})).createWritable(); await w.write(await fileHandle.getFile()); await w.close();
+}
+async function fichierExiste(cdir, parts){ try { const d = await dir(cdir, parts.slice(0,-1)); await d.getFileHandle(parts.at(-1)); return true; } catch { return false; } }
+async function classer(i){
+  const r = idxRows[i], c = idxContrat;
+  if (idxDirty){ await saveIndex(); }
+  const lotNom = r.Dossier.split("\\").pop();
+  let lot; try { lot = await dir(c.dir, ["00_LEVES_A_TRAITER", lotNom]); } catch { alert(`Le dossier ${r.Dossier} est introuvable.`); return renderIndex(); }
+  const tout = (await inventaire(lot)).filter(x => x.rel !== "_lot.json" && !IGNORES.includes(x.rel.split("/").pop().toLowerCase()));
+  const leveNom = r.NomFichier !== "(documents)" ? r.NomFichier : null;
+  const cle = leveNom ? leveKey(leveNom) : lotNom.toUpperCase();
+  const p = leveNom ? parseLeveFichier(leveNom) : null;
+  // Méthode dominante des données brutes
+  const aDemander = tout.some(x => isDBX(x.rel)), aGnss = tout.some(x => isGnss(x.rel));
+  const sousBrut = tout.some(x => x.rel.includes("/")) || aDemander || aGnss || tout.some(x => !x.rel.includes("/") && !isLeve(x.rel) && !EXT_PHOTO.includes(ext(x.rel)) && !EXT_CARNET.includes(ext(x.rel)));
+  let instr = r.Instrument;
+  if (!instr && aDemander){
+    const rep = prompt(`Données brutes de ${cle} : méthode dominante ?\nTapez C pour conventionnel ou G pour GNSS.`, "C");
+    if (!rep) return renderIndex();
+    instr = /^g/i.test(rep.trim()) ? "GNSS" : "Conventionnel";
+  }
+  if (!instr && aGnss) instr = "GNSS";
+  const dBrut = ["06_DONNEES_BRUTES", instr === "GNSS" ? "03_GNSS" : "04_STATION_TOTALE", cle];
+  const dPhoto = ["07_PHOTOS", p && p.typeNum === "2" ? "02_IMPLANTATION" : "01_CHANTIER", cle];
+  const dTerr = ["01_LEVES", "00_TERRAINS"];
+  const avecPrefixe = n => n.toUpperCase().startsWith(cle) ? n : `${cle}_${n}`;
+  // Plan de classement
+  const plan = []; let nPhotos = 0, aBrutes = false;
+  for (const x of tout){
+    const n = x.rel.split("/").pop();
+    if (x.rel.includes("/")){ plan.push({x, dest:[...dBrut, ...x.rel.split("/")]}); aBrutes = true; continue; }     // sous-dossiers (DBX…) : données brutes intactes
+    if (leveNom && n === leveNom){ plan.push({x, dest:[...dTerr, n]}); plan.push({x, dest:["01_LEVES","99_NDA-001", n]}); continue; }
+    if (isLeve(n) && leveKey(n) === cle){ plan.push({x, dest:[...dTerr, n]}); continue; }                            // _MODIF et variantes
+    if (EXT_PHOTO.includes(ext(n))){ plan.push({x, dest:[...dPhoto, n]}); nPhotos++; continue; }
+    if (EXT_CARNET.includes(ext(n)) || isLeve(n)){ plan.push({x, dest:[...dTerr, avecPrefixe(n)]}); continue; }      // carnets, croquis, scans papier, notes (option a)
+    plan.push({x, dest:[...dBrut, n]}); aBrutes = true;                                                                // .DC, .JOB, .T02, autres
+  }
+  // Collisions : rien n'est écrasé
+  const coll = []; for (const e of plan) if (await fichierExiste(c.dir, e.dest)) coll.push(e.dest.join("\\"));
+  if (coll.length){ alert(`Classement annulé : ces fichiers existent déjà dans le contrat.\n\n${coll.slice(0,8).join("\n")}${coll.length > 8 ? "\n…" : ""}\n\nVérifiez s'il s'agit d'un doublon (01_LEVES\\02_DOUBLONS).`); return renderIndex(); }
+  if (!confirm(`Classer ${cle} selon la norme ?\n\n${plan.length} copie(s) :\n• levé et carnets → 01_LEVES\\00_TERRAINS\n${nPhotos ? `• ${nPhotos} photo(s) → ${dPhoto.join("\\")}\n` : ""}${aBrutes ? `• données brutes → ${dBrut.join("\\")}\n` : ""}\nLe dossier sera ensuite retiré de 00_LEVES_A_TRAITER.`)) return renderIndex();
+  try {
+    for (const e of plan) await copierVers(c.dir, e.dest, e.x.h);
+    await dir(c.dir, ["00_LEVES_A_TRAITER"]).then(d => d.removeEntry(lotNom, {recursive:true}));
+  } catch(e){ alert(`Le classement s'est arrêté : ${e.message}\nLe dossier d'origine est conservé dans 00_LEVES_A_TRAITER.`); return renderIndex(); }
+  Object.assign(r, {
+    Statut: "Traité", Traite_par: localStorage.getItem("an.deposant") || "", Date_Traitement: nowIso(), Instrument: instr || r.Instrument,
+    Dossier: dTerr.join("\\"), Chemin_Leve: leveNom ? [...dTerr, leveNom].join("\\") : "",
+    Chemin_Brutes: aBrutes ? dBrut.join("\\") : "", Chemin_Photos: nPhotos ? dPhoto.join("\\") : "", Photos: nPhotos ? `${nPhotos} photo(s)` : r.Photos
+  });
+  idxDirty = true; await saveIndex();
+  await appendJournal("Classement", `${c.nom} – ${cle} – ${plan.length} copie(s)`);
+  renderIndex();
+}
+
+/* ===== Accès : photos et chemins ===== */
+const EXT_VISIBLE = [".jpg",".jpeg",".png",".gif",".webp",".bmp"];
+async function voirPhotos(r){
+  const rel = r.Chemin_Photos || r.Dossier;
+  let d; try { d = await dir(idxContrat.dir, rel.split("\\")); } catch { return alert(`Dossier introuvable : ${rel}`); }
+  const imgs = []; for (const x of await inventaire(d)) if (EXT_PHOTO.includes(ext(x.rel)) && !x.rel.includes("/")) imgs.push(x);
+  const box = $("#galerie"); box.hidden = false; box.scrollIntoView({behavior:"smooth", block:"start"});
+  $("#galTitre").textContent = `${r.NomFichier} – ${imgs.length} photo(s) – ${rel}`;
+  const urls = [];
+  $("#galGrille").innerHTML = "";
+  for (const x of imgs){
+    const f = await x.h.getFile();
+    const fig = document.createElement("figure");
+    if (EXT_VISIBLE.includes(ext(x.rel))){ const u = URL.createObjectURL(f); urls.push(u); fig.innerHTML = `<a href="${u}" target="_blank" rel="noopener"><img src="${u}" alt="${esc(x.rel)}" loading="lazy"></a>`; }
+    else fig.innerHTML = `<div class="noprev">Aperçu impossible (${esc(ext(x.rel))})</div>`;
+    fig.insertAdjacentHTML("beforeend", `<figcaption>${esc(x.rel)}</figcaption>`);
+    $("#galGrille").append(fig);
+  }
+  $("#galFermer").onclick = () => { box.hidden = true; urls.forEach(u => URL.revokeObjectURL(u)); };
+}
+function copierChemin(rel){
+  const racine = (localStorage.getItem("an.racine") || "").replace(/\\+$/, "");
+  const complet = racine ? `${racine}\\${idxContrat.nom}\\${rel}` : `${idxContrat.nom}\\${rel}`;
+  navigator.clipboard.writeText(complet).then(() => { showMsg(`Chemin copié : ${esc(complet)}${racine ? " — collez-le dans l'Explorateur Windows." : " — indiquez le chemin Windows du dossier choisi (en haut) pour obtenir un chemin complet."}`, "ok"); setTimeout(() => showMsg(""), 5000); });
 }
 async function saveIndex(){
-  try { await writeFile(idxContrat.dir, INDEX_PATH, csvBuild(idxRows)); idxDirty = false; $("#btnIdxSave").disabled = true; showMsg("Index enregistré.", "ok"); setTimeout(() => showMsg(""), 2500);
+  try { await writeFile(idxContrat.dir, INDEX_PATH, csvBuild(idxRows)); idxDirty = false; $("#btnIdxSave").disabled = true; renderIndex(); showMsg("Index enregistré.", "ok"); setTimeout(() => showMsg(""), 2500);
     await appendJournal("Index modifié", idxContrat.nom); }
   catch(e){ showMsg(`L'index n'a pas pu être enregistré. Fermez INDEX_LEVES.csv dans Excel, puis réessayez. (${esc(e.message)})`); }
+}
+
+/* ===== Bilan (lecture seule) ===== */
+const STD_RACINE = ["00_LEVES_A_TRAITER","01_LEVES","02_IMPLANTATION","03_PLANS","04_PRODUCTION","05_LIVRABLES","06_DONNEES_BRUTES","07_PHOTOS","08_PARTAGE","09_DIVERS","10_ARCHIVES","11_ADMIN"];
+let bilan = [];
+async function lancerBilan(){
+  if (!root) return alert("Choisissez d'abord le dossier des contrats.");
+  $("#btnBilan").disabled = true; $("#bilanTable").innerHTML = `<p class="empty">Lecture des dossiers…</p>`;
+  bilan = [];
+  const parSect = {};
+  for await (const [name, h] of root.entries()){
+    if (h.kind !== "directory" || name === DEPOT || name.startsWith(".") || name.startsWith("_")) continue;
+    const m = name.match(RE_CONTRAT);
+    const racine = []; const fichiersRacine = [];
+    for await (const [n, x] of h.entries()) (x.kind === "directory" ? racine : fichiersRacine).push(n);
+    const std = racine.filter(n => STD_RACINE.includes(n));
+    const herites = racine.filter(n => !STD_RACINE.includes(n));
+    const ancien = herites.some(n => /^\d{2} - /.test(n));
+    const arbo = std.length >= 10 ? "Nouvelle" : std.length ? (ancien ? "Mixte" : "Partielle") : (ancien ? "Ancienne" : racine.length ? "Non standard" : "Vide");
+    let attente = 0;
+    if (racine.includes("00_LEVES_A_TRAITER")){ for await (const [n] of (await h.getDirectoryHandle("00_LEVES_A_TRAITER")).entries()) if (!IGNORES.includes(n.toLowerCase())) attente++; }
+    const indexNouveau = (await readText(h, INDEX_PATH)) !== null;
+    // Index Excel existants : à la racine, dans 01_LEVES et dans les dossiers hérités (1 niveau)
+    const excels = fichiersRacine.filter(n => /index|registre/i.test(n) && /\.xls[xm]?$/i.test(n));
+    for (const sd of racine.filter(n => n === "01_LEVES" || herites.includes(n))){
+      try { for await (const [n, x] of (await h.getDirectoryHandle(sd)).entries()) if (x.kind === "file" && /index|registre/i.test(n) && /\.xls[xm]?$/i.test(n)) excels.push(`${sd}\\${n}`); } catch {}
+    }
+    const numero = m ? m[1].toUpperCase() : "";
+    const sect = numero ? sectDefaut(numero) : "";
+    if (sect) (parSect[sect] ??= []).push(name);
+    bilan.push({Dossier:name, Nom_conforme: m ? (/ /.test(name) ? "Oui (espaces)" : "Oui") : "Non", Arborescence: arbo, Dossiers_standards: `${std.length}/12`,
+      Dossiers_herites: herites.join(", "), Levés_en_attente: attente, Index_outil: indexNouveau ? "Oui" : "Non", Index_Excel: excels.join(", "), Secteur_niveau3: sect, Conflit_secteur: ""});
+  }
+  for (const b of bilan) if (b.Secteur_niveau3 && parSect[b.Secteur_niveau3].length > 1) b.Conflit_secteur = parSect[b.Secteur_niveau3].filter(n => n !== b.Dossier).join(", ");
+  bilan.sort((a,b) => a.Dossier.localeCompare(b.Dossier));
+  renderBilan(); $("#btnBilan").disabled = false; $("#btnBilanCopier").disabled = !bilan.length;
+}
+function renderBilan(){
+  if (!bilan.length){ $("#bilanTable").innerHTML = `<p class="empty">Aucun dossier de contrat trouvé.</p>`; return; }
+  const cols = Object.keys(bilan[0]);
+  const tag = (c, v) => c === "Arborescence" ? `<span class="state ${v==="Nouvelle"?"ok":v==="Partielle"||v==="Mixte"?"warn":"bad"}">${esc(v)}</span>`
+    : c === "Nom_conforme" ? `<span class="state ${v==="Non"?"bad":v==="Oui"?"ok":"warn"}">${esc(v)}</span>`
+    : c === "Conflit_secteur" && v ? `<span class="state bad">${esc(v)}</span>` : esc(v);
+  const n = k => bilan.filter(b => b.Arborescence === k).length;
+  $("#bilanTable").innerHTML = `<div class="chips" style="margin-bottom:10px"><span class="chip">${bilan.length} dossier(s)</span><span class="chip">Nouvelle : ${n("Nouvelle")}</span><span class="chip">Partielle ou mixte : ${n("Partielle")+n("Mixte")}</span><span class="chip">Ancienne : ${n("Ancienne")}</span><span class="chip">Non standard ou vide : ${n("Non standard")+n("Vide")}</span><span class="chip">Levés en attente : ${bilan.reduce((t,b) => t + b.Levés_en_attente, 0)}</span></div>
+   <div class="tablewrap"><table><thead><tr>${cols.map(c => `<th>${c.replace(/_/g," ")}</th>`).join("")}</tr></thead><tbody>
+   ${bilan.map(b => `<tr>${cols.map(c => `<td class="${["Dossiers_herites","Index_Excel"].includes(c)?"wrap":""}">${tag(c, b[c])}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function copierBilan(){
+  const cols = Object.keys(bilan[0]);
+  const tsv = [cols.join("\t"), ...bilan.map(b => cols.map(c => String(b[c]).replace(/[\t\n]/g," ")).join("\t"))].join("\n");
+  navigator.clipboard.writeText(tsv).then(() => { showMsg("Bilan copié : collez-le dans une feuille Excel (Ctrl+V).", "ok"); setTimeout(() => showMsg(""), 4000); });
 }
 
 /* ===== Interface ===== */
@@ -668,12 +1171,23 @@ document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
   if (b.dataset.tab === "contrats" && root) scanContrats();
 });
 $("#btnPick").onclick = pickRoot;
+$("#btnBilan").onclick = lancerBilan;
+$("#aContrat").onchange = chargerActivation;
+document.querySelectorAll("input[name=aMode]").forEach(r => r.onchange = majMode);
+$("#btnActiver").onclick = activer;
+$("#btnAjSect").onclick = () => ajouterLigne();
+$("#btnColler").onclick = () => { $("#aCollerBox").hidden = !$("#aCollerBox").hidden; if (!$("#aCollerBox").hidden) $("#aColler").focus(); };
+$("#btnImporter").onclick = () => { const n = importerListe($("#aColler").value); $("#aColler").value = ""; $("#aCollerBox").hidden = true; log("#contratLog", `${n} secteur(s) ajouté(s) à la liste. Vérifiez-les, puis cliquez sur Activer le contrat.`); };
+$("#btnBilanCopier").onclick = copierBilan;
+$("#racine").value = localStorage.getItem("an.racine") || "";
+$("#racine").onchange = e => localStorage.setItem("an.racine", e.target.value.trim());
 $("#btnRefresh").onclick = scanBoite;
 $("#btnSeen").onclick = () => { localStorage.setItem("an.vu", nowIso()); renderBoite(); };
 $("#btnDeposer").onclick = deposer;
 $("#btnVider").onclick = () => { pending = []; lots = []; renderPending(); };
 $("#btnCreer").onclick = creerContrat;
 $("#btnIdxSave").onclick = saveIndex;
+$("#btnRevalider").onclick = revalider;
 $("#idxContrat").onchange = loadIndex;
 $("#idxFiltre").onchange = renderIndex;
 $("#deposant").onchange = e => localStorage.setItem("an.deposant", e.target.value);
@@ -685,9 +1199,24 @@ drop.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefaul
 fi.onchange = () => { addFiles(fi.files); fi.value = ""; };
 drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
 drop.ondragleave = () => drop.classList.remove("over");
-drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); addFiles(e.dataTransfer.files); };
+drop.ondrop = async e => {
+  e.preventDefault(); drop.classList.remove("over");
+  const items = [...e.dataTransfer.items].filter(i => i.kind === "file");
+  if (items.length && items[0].getAsFileSystemHandle){
+    const hs = items.map(i => i.getAsFileSystemHandle());   // appel synchrone obligatoire
+    const fichiers = [];
+    for (const h of await Promise.all(hs)){
+      if (!h) continue;
+      if (h.kind === "directory") await addDirectory(h); else fichiers.push(await h.getFile());
+    }
+    if (fichiers.length) addFiles(fichiers);
+  } else addFiles(e.dataTransfer.files);
+};
+$("#btnDossier").onclick = async e => { e.stopPropagation(); try { await addDirectory(await window.showDirectoryPicker({id:"an-leve", mode:"read"})); } catch(err){ if (err.name !== "AbortError") log("#depotLog", err.message); } };
 window.addEventListener("beforeunload", e => { if (idxDirty || pending.length){ e.preventDefault(); e.returnValue = ""; } });
 
+// Garde-fou : cette page doit être publiée dans /gestion-leves/, pas à la racine du site
+if (!/gestion-leves/i.test(location.pathname) && location.protocol.startsWith("http")) showMsg("Attention : cette page est publiée à la racine du site et remplace l'accueil de la boîte à outils. Sur GitHub, elle doit se trouver dans le dossier « gestion-leves ».");
 if (!("showDirectoryPicker" in window)){ $("#noSupport").hidden = false; $("#btnPick").disabled = true; }
 else tryRestore();
 </script>
