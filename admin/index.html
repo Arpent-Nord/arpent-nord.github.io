@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Administration – Arpent-Nord</title>
+<meta name="description" content="Administration du système de gestion des contrats : codes arpenteurs, tables de référence, contrats.">
+<link rel="icon" href="/validation-leve/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#eef1f2;--panel:#fff;--ink:#18222a;--muted:#5b6a74;--line:#d5dcdf;--accent:#0b6e69;--accent-ink:#fff;--accent-soft:#d8eeec;
+  --warn:#9a5b00;--warn-soft:#fbefd9;--bad:#a42626;--bad-soft:#f8dddd;--ok:#1d6b34;--ok-soft:#dcf0e1;--new:#1b4fa0;--new-soft:#dfe9fa;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;--f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;
+  --warn:#f0b65a;--warn-soft:#3a2c12;--bad:#f08a8a;--bad-soft:#3d1c1c;--ok:#7fd69a;--ok-soft:#173523;--new:#8fb5f5;--new-soft:#1a2a45;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1417;--panel:#161d21;--ink:#e3e9ec;--muted:#93a3ad;--line:#2a353b;--accent:#3cc4b8;--accent-ink:#06211f;--accent-soft:#143633;
+  --warn:#f0b65a;--warn-soft:#3a2c12;--bad:#f08a8a;--bad-soft:#3d1c1c;--ok:#7fd69a;--ok-soft:#173523;--new:#8fb5f5;--new-soft:#1a2a45;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 var(--f-body)}
+main{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+a{color:var(--accent)}
+header{border-bottom:3px solid var(--accent);padding-bottom:12px;margin-bottom:18px}
+.back{font-size:.9rem;text-decoration:none;font-weight:600}
+h1{font:700 2rem/1.1 var(--f-display);margin:6px 0 0;letter-spacing:.02em;text-transform:uppercase}
+header p{margin:6px 0 0;color:var(--muted)}
+h2{font:700 1.35rem/1.15 var(--f-display);margin:0 0 10px}
+h3{font:700 1.1rem/1.2 var(--f-display);margin:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.conn{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.conn .path{font-weight:600}
+.conn .hint{color:var(--muted);font-size:.92rem;flex-basis:100%}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--bad);display:inline-block}
+.dot.on{background:var(--ok)}
+nav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--line)}
+nav button{font:600 1.05rem/1 var(--f-display);background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:10px 14px;cursor:pointer;margin-bottom:-1px}
+nav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+nav .count{display:inline-block;min-width:1.6em;padding:2px 6px;margin-left:6px;border-radius:999px;background:var(--new-soft);color:var(--new);font:600 .8rem/1.2 var(--f-body)}
+nav .count:empty{display:none}
+.btn{display:inline-block;border-radius:6px;padding:8px 14px;font:600 .95rem/1.2 var(--f-body);text-decoration:none;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.btn.go{background:var(--accent);color:var(--accent-ink)}
+.btn.small{padding:4px 10px;font-size:.85rem}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:hover:not(:disabled){filter:brightness(1.08)}
+label{font-weight:600;font-size:.92rem}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px}
+textarea{width:100%;min-height:2.4em}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px}
+.muted{color:var(--muted)}
+.small{font-size:.88rem}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:28px 16px;text-align:center;background:var(--panel);cursor:pointer}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop b{font:700 1.2rem/1.2 var(--f-display);display:block;margin-bottom:4px}
+.lot{border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin-top:12px;background:var(--panel)}
+.lot-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+.lot-name{font:700 1.1rem/1.2 var(--f-display);letter-spacing:.03em}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.chip{font-size:.8rem;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--ink)}
+.state{font-size:.82rem;font-weight:600;padding:2px 8px;border-radius:4px}
+.state.ok{background:var(--ok-soft);color:var(--ok)}
+.state.warn{background:var(--warn-soft);color:var(--warn)}
+.state.bad{background:var(--bad-soft);color:var(--bad)}
+.state.new{background:var(--new-soft);color:var(--new)}
+ul.err{margin:4px 0 0;padding-left:18px;color:var(--warn);font-size:.88rem}
+.group{margin-bottom:18px}
+.group-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:2px solid var(--line)}
+.group-head .tot{color:var(--muted);font-size:.92rem}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;vertical-align:top}
+th{font:600 .85rem/1.2 var(--f-body);color:var(--muted);background:var(--bg);position:sticky;top:0}
+td.wrap{white-space:normal;min-width:180px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--panel)}
+.card .num{font:700 1.25rem/1.1 var(--f-display)}
+.card .stats{display:flex;gap:14px;margin-top:8px;font-size:.88rem}
+.card .stats b{font:700 1.2rem/1 var(--f-display);display:block}
+.log{font-size:.88rem;max-height:180px;overflow:auto;background:var(--bg);border-radius:6px;padding:8px 10px;margin-top:10px;white-space:pre-wrap}
+.log:empty{display:none}
+.msg{padding:10px 14px;border-radius:8px;margin-bottom:12px}
+.msg.bad{background:var(--bad-soft);color:var(--bad)}
+.msg.ok{background:var(--ok-soft);color:var(--ok)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+td.ed input,td.ed select{padding:3px 6px;font-size:.86rem}
+td.ed.modif input,td.ed.modif select{border-color:var(--accent);background:var(--accent-soft)}
+.dessin{display:inline-flex;gap:4px;align-items:center}
+.vtag{display:inline-block;padding:2px 8px;border-radius:4px;font-weight:600;font-size:.82rem;white-space:normal}
+.vtag.ok{background:var(--ok-soft);color:var(--ok)}
+.vtag.warn{background:var(--warn-soft);color:var(--warn)}
+.legende{background:var(--bg);border-radius:8px;padding:10px 12px;margin-bottom:12px}
+.legende dl{display:grid;grid-template-columns:max-content 1fr;gap:6px 12px;margin:0;align-items:baseline}
+.legende dd{margin:0;color:var(--muted)}
+.state{cursor:default}
+.corr{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--warn-soft)}
+.galerie{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:12px}
+.galerie figure{margin:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--bg)}
+.galerie img{display:block;width:100%;height:150px;object-fit:cover}
+.galerie figcaption{font-size:.78rem;padding:4px 6px;color:var(--muted);word-break:break-all}
+.galerie .noprev{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;text-align:center;padding:8px}
+.secthead,.sectrow{display:grid;grid-template-columns:110px 1fr 36px;gap:8px;align-items:center}
+.secthead{margin:6px 0 2px}
+.sectrow{margin-top:4px}
+.sectrow input.sc{text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}
+.sectrow input.bad{border-color:var(--bad);background:var(--bad-soft)}
+.sectrow button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;height:32px;cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+footer{margin-top:22px;color:var(--muted);font-size:.85rem}
+</style>
+<style>
+.adm-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-bottom:16px}
+.adm-card{border:1px solid var(--line);border-radius:10px;padding:14px 16px;background:var(--panel);display:flex;flex-direction:column;gap:6px}
+.adm-card h3{font-size:1.15rem}
+.adm-card p{margin:0;color:var(--muted);font-size:.92rem;flex:1}
+.prochain{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:12px 14px;border-radius:8px;background:var(--accent-soft)}
+.prochain b.code{font:700 2.2rem/1 var(--f-display);color:var(--accent)}
+.diag li{margin:3px 0}
+.diag .bad{color:var(--bad)} .diag .warn{color:var(--warn)} .diag .ok{color:var(--ok)}
+tr.inactif td{color:var(--muted)}
+td input[type=date]{padding:2px 4px;font-size:.84rem}
+.natrow{display:grid;grid-template-columns:90px 1fr 36px;gap:8px;margin-top:4px}
+.natrow input.c{text-transform:uppercase;font-family:ui-monospace,Consolas,monospace}
+.natrow button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;cursor:pointer}
+</style>
+<style id="an-retour-style">/* Bouton standard de retour à la boîte à outils Arpent-Nord (an-retour) */
+.an-retour{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1.5px solid #0b6e69;color:#0b6e69;background:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-decoration:none;white-space:nowrap;flex:none;margin:0 10px 0 0}
+.an-retour:hover,.an-retour:focus-visible{background:#0b6e69;color:#fff;outline:none}
+@media (prefers-color-scheme:dark){.an-retour{background:transparent;color:#3cc4b8;border-color:#3cc4b8}.an-retour:hover,.an-retour:focus-visible{background:#3cc4b8;color:#06211f}}
+@media print{.an-retour{display:none}}</style>
+</head>
+<body>
+<main>
+<header>
+  <a class="an-retour" href="https://arpent-nord.github.io/" title="Retour à la boîte à outils">‹ Boîte à outils</a>
+  <h1>Administration</h1>
+  <p>Outils réservés à l'administration des contrats. <b>Monday est la seule source</b> pour les employés : cette page vérifie les données et produit le fichier de référence utilisé par la Gestion des levés.</p>
+</header>
+
+<div id="noSupport" class="msg bad" hidden>Cette page doit être ouverte dans <b>Chrome ou Edge sur un ordinateur</b>.</div>
+
+<section class="panel conn" aria-label="Dossier des contrats">
+  <span class="dot" id="connDot"></span>
+  <span>Dossier des contrats : <span class="path" id="connPath">aucun</span></span>
+  <button class="btn go" id="btnPick">Choisir le dossier des contrats</button>
+  <button class="btn" id="btnReconnect" hidden>Reconnecter</button>
+  <span class="hint" id="connHint">Même dossier que la Gestion des levés (01_ACTIFS, ou 99_EN RODAGE pendant le rodage). Le fichier de référence est dans <b>01_TRAITEMENT\_SYSTEME\reference.json</b>.</span>
+</section>
+
+<div id="globalMsg"></div>
+
+<nav role="tablist">
+  <button role="tab" data-tab="accueil" aria-selected="true">Accueil</button>
+  <button role="tab" data-tab="codes" aria-selected="false">Codes arpenteurs</button>
+  <button role="tab" data-tab="tables" aria-selected="false">Tables de référence</button>
+</nav>
+
+<!-- ACCUEIL -->
+<section data-panel="accueil">
+  <div class="adm-cards">
+    <div class="adm-card"><h3>Codes arpenteurs</h3><p>Importer les listes d'employés de Monday, détecter les problèmes de codes, proposer le prochain code libre et mettre à jour le fichier de référence.</p><button class="btn go" data-go="codes">Ouvrir</button></div>
+    <div class="adm-card"><h3>Tables de référence</h3><p>Natures de levé (NAT) et extensions des données brutes utilisées pour valider et classer les levés.</p><button class="btn go" data-go="tables">Ouvrir</button></div>
+    <div class="adm-card"><h3>Activation des contrats</h3><p>Valider l'arborescence d'un contrat créé par l'administration et déclarer ses secteurs (numéro de contrat ou WBS).</p><a class="btn go" href="/gestion-leves/#contrats">Ouvrir</a></div>
+    <div class="adm-card"><h3>Bilan des contrats</h3><p>Vue d'ensemble, en lecture seule, de tous les dossiers de contrats : arborescence, levés en attente, index existants, conflits de secteur.</p><a class="btn go" href="/gestion-leves/#bilan">Ouvrir</a></div>
+    <div class="adm-card"><h3>Catalogue des répertoires</h3><p>Dossiers spécifiques aux projets (04_CLOUD à 11_TRACK…), leur utilisation et leur promotion dans la norme.</p><span class="state warn" style="align-self:flex-start">À venir</span></div>
+  </div>
+</section>
+
+<!-- CODES ARPENTEURS -->
+<section data-panel="codes" hidden>
+  <div class="panel">
+    <h2>Codes arpenteurs</h2>
+    <p class="small muted" style="margin-top:0">Règles : un code par personne, de 01 à 99, commun aux deux compagnies, attribué en prenant le plus petit numéro jamais utilisé; un code n'est <b>jamais réattribué</b> avant la fin de la période de conservation. Chaque attribution garde sa date de début et de fin : un levé est relié à l'arpenteur qui détenait le code à la date du levé.</p>
+    <div class="row">
+      <div class="field"><label for="fMonday">Exports Excel de Monday (ÉQUIPES et COÉQUIPIERS)</label><input type="file" id="fMonday" accept=".xlsx,.xls,.csv" multiple></div>
+      <div class="field"><label for="retention">Période de conservation (années, à valider)</label><input type="number" id="retention" min="1" max="50" value="5" style="width:90px"></div>
+    </div>
+    <p class="small muted">Dans Monday : ouvrez le tableau → menu « … » → <b>Exporter vers Excel</b>. Faites-le pour les deux tableaux, puis choisissez les deux fichiers ici. Les colonnes lues sont <b>Name</b>, <b>Numéro arpenteur</b> (ou <b># arpenteur</b>), et si elles existent <b>Date d'attribution</b> et <b>Date de fin</b>; le groupe <b>ARCHIVE</b> indique un employé inactif.</p>
+    <div class="prochain" id="prochain" hidden></div>
+    <div id="diag" style="margin-top:12px"></div>
+    <div id="codesTable" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:12px"><button class="btn go" id="btnGenerer" disabled>Mettre à jour reference.json</button><button class="btn" id="btnTelecharger" disabled>Télécharger une copie</button></div>
+    <div class="log" id="codesLog"></div>
+  </div>
+</section>
+
+<!-- TABLES -->
+<section data-panel="tables" hidden>
+  <div class="panel">
+    <h2>Natures de levé (NAT)</h2>
+    <p class="small muted" style="margin-top:0">Code de 3 lettres utilisé dans le nom des fichiers (AAMMJJSECT#<b>NAT</b>SS). Retirer une nature rend non conformes les levés qui l'utilisent : préférez la conserver.</p>
+    <div id="natRows"></div>
+    <div class="row" style="margin-top:8px"><button class="btn small" id="btnAjNat">+ Ajouter une nature</button></div>
+  </div>
+  <div class="panel">
+    <h2>Extensions des données brutes</h2>
+    <div class="field"><label for="brDem">Fichiers pouvant contenir GNSS et conventionnel (l'arpenteur choisit la méthode dominante)</label><input id="brDem" style="width:100%"></div>
+    <div class="field" style="margin-top:8px"><label for="brGnss">Fichiers GNSS seulement (classés automatiquement en GNSS)</label><input id="brGnss" style="width:100%"></div>
+    <p class="small muted">Séparez les extensions par des virgules, ex. <code>.dc, .job</code>. Les fichiers .X01 à .X99 (DBX Leica) sont toujours traités comme « méthode à préciser ».</p>
+    <div class="row" style="margin-top:8px"><button class="btn go" id="btnTables" disabled>Enregistrer dans reference.json</button></div>
+    <div class="log" id="tablesLog"></div>
+  </div>
+</section>
+
+<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.2 (2026-10-26).</footer>
+</main>
+
+<script>
+"use strict";
+const DEPOT = "01_TRAITEMENT", SYS = "_SYSTEME", REF = "reference.json";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2, "0");
+const auj = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; };
+const horo = () => { const d = new Date(); return `${auj()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+const norm = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]+/g, " ").trim();
+const titre = s => String(s || "").toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase());
+function log(el, t){ const d = $(el); d.textContent += `${horo().slice(11)}  ${t}\n`; d.scrollTop = d.scrollHeight; }
+function showMsg(t, k = "bad"){ $("#globalMsg").innerHTML = t ? `<div class="msg ${k}">${t}</div>` : ""; }
+
+/* ===== Dossier (même autorisation que la Gestion des levés) ===== */
+let root = null, ref = null;
+const idb = {
+  open(){ return new Promise((ok,ko) => { const r = indexedDB.open("an-gestion-leves", 1); r.onupgradeneeded = () => r.result.createObjectStore("h"); r.onsuccess = () => ok(r.result); r.onerror = () => ko(r.error); }); },
+  async get(k){ const db = await this.open(); return new Promise(ok => { const r = db.transaction("h").objectStore("h").get(k); r.onsuccess = () => ok(r.result); r.onerror = () => ok(null); }); },
+  async set(k,v){ const db = await this.open(); return new Promise(ok => { const t = db.transaction("h","readwrite"); t.objectStore("h").put(v,k); t.oncomplete = ok; }); }
+};
+async function sysDir(create = false){ return (await root.getDirectoryHandle(DEPOT, {create})).getDirectoryHandle(SYS, {create}); }
+async function lireRef(){
+  try { const f = await (await (await sysDir()).getFileHandle(REF)).getFile(); return JSON.parse(await f.text()); }
+  catch(e){ return null; }
+}
+async function ecrireRef(obj){
+  const d = await sysDir(true);
+  // copie de sauvegarde avant d'écrire
+  try {
+    const anc = await (await d.getFileHandle(REF)).getFile();
+    const arch = await d.getDirectoryHandle("archives", {create:true});
+    const w0 = await (await arch.getFileHandle(`reference_${auj().replace(/-/g,"")}_${horo().slice(11).replace(/:/g,"")}.json`, {create:true})).createWritable(); await w0.write(anc); await w0.close();
+  } catch {}
+  const w = await (await d.getFileHandle(REF, {create:true})).createWritable(); await w.write(JSON.stringify(obj, null, 1)); await w.close();
+}
+async function useRoot(h){
+  root = h; $("#connDot").classList.add("on"); $("#connPath").textContent = h.name; $("#btnReconnect").hidden = true;
+  try { await root.getDirectoryHandle(DEPOT); } catch {
+    $("#connHint").innerHTML = `<span style="color:var(--bad)">Le dossier « ${esc(h.name)} » ne contient pas ${DEPOT}. Choisissez le dossier des contrats (01_ACTIFS ou 99_EN RODAGE).</span>`; return;
+  }
+  ref = await lireRef();
+  $("#connHint").innerHTML = ref ? `Fichier de référence chargé : ${ref.arpenteurs?.length ?? 0} attribution(s) de codes, ${ref.nat?.length ?? 0} natures. Version ${esc(ref.version || "?")}.` : `<span style="color:var(--warn)">Aucun reference.json trouvé dans ${DEPOT}\\${SYS} : il sera créé.</span>`;
+  $("#btnTables").disabled = false; chargerTables(); if (monday.length) analyser();
+}
+async function pick(){ try { const h = await showDirectoryPicker({id:"an-actifs", mode:"readwrite"}); await idb.set("root", h); await useRoot(h); } catch(e){ if (e.name !== "AbortError") showMsg(esc(e.message)); } }
+async function restaurer(){
+  const h = await idb.get("root"); if (!h) return;
+  if (await h.queryPermission({mode:"readwrite"}) === "granted") return useRoot(h);
+  $("#connPath").textContent = h.name + " (autorisation à renouveler)";
+  const b = $("#btnReconnect"); b.hidden = false; b.onclick = async () => { if (await h.requestPermission({mode:"readwrite"}) === "granted") useRoot(h); };
+}
+
+/* ===== Lecture des exports Monday ===== */
+let monday = [];   // {ss, nom, entite, actif, debut, fin, source}
+function dateIso(v){
+  if (v == null || v === "") return "";
+  if (typeof v === "number"){ const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}-${pad(d.m)}-${pad(d.d)}` : ""; }
+  const s = String(v).trim(); const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m2 ? `${m2[3]}-${pad(m2[2])}-${pad(m2[1])}` : "";
+}
+function lireExport(wb, fichier){
+  const out = [];
+  for (const nom of wb.SheetNames){
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[nom], {header:1, raw:true, defval:""});
+    const titreTableau = String(rows[0]?.[0] || nom);
+    const entite = /COEQUIP|MECATECH/i.test(norm(titreTableau + " " + fichier)) ? "MECATECH" : "ARPENT-NORD";
+    let entete = null, groupe = "";
+    for (const r of rows){
+      const cells = r.map(c => String(c).trim());
+      const nonVides = cells.filter(Boolean);
+      if (!nonVides.length){ entete = null; continue; }
+      if (/^(NAME|NOM)$/i.test(cells[0]) && cells.some(c => /arpenteur|code/i.test(c))){
+        entete = {nom:0, code: cells.findIndex(c => /arpenteur|^code/i.test(c) && !/date/i.test(c)), debut: cells.findIndex(c => /attribution|d[ée]but/i.test(c)), fin: cells.findIndex(c => /date de fin|^fin/i.test(c))};
+        continue;
+      }
+      if (!entete){ if (nonVides.length === 1) groupe = nonVides[0]; continue; }
+      const nomP = cells[entete.nom]; if (!nomP) continue;
+      const code = entete.code >= 0 ? String(r[entete.code]).trim() : "";
+      out.push({ss: /^\d{1,2}$/.test(code) ? pad(code) : (code ? "?" + code : ""), nom: titre(nomP), entite, actif: !/ARCHIVE/i.test(norm(groupe)),
+        debut: entete.debut >= 0 ? dateIso(r[entete.debut]) : "", fin: entete.fin >= 0 ? dateIso(r[entete.fin]) : "", groupe, source: fichier});
+    }
+  }
+  return out;
+}
+async function importer(files){
+  monday = [];
+  for (const f of files){
+    try { const wb = XLSX.read(await f.arrayBuffer(), {type:"array"}); const l = lireExport(wb, f.name); monday.push(...l); log("#codesLog", `${f.name} : ${l.length} employé(s) lus.`); }
+    catch(e){ log("#codesLog", `${f.name} : lecture impossible (${e.message}).`); }
+  }
+  analyser();
+}
+
+/* ===== Analyse ===== */
+let fusion = [];
+function analyser(){
+  if (!monday.length) return;
+  const ret = Math.max(1, +$("#retention").value || 5);
+  const anciens = (ref?.arpenteurs || []).map(a => ({ss: pad(a.ss), nom: a.nom, entite: a.entite || "", actif: a.actif !== false, debut: a.date_attribution || "", fin: a.date_fin || "", remarque: a.remarque || ""}));
+  const diag = [];
+  // Problèmes dans Monday
+  const actifsSansCode = monday.filter(m => m.actif && !m.ss && !/ADMINISTRATION/i.test(norm(m.groupe)));
+  actifsSansCode.forEach(m => diag.push(["warn", `${m.nom} (${m.entite}) est actif dans Monday mais n'a pas de numéro d'arpenteur.`]));
+  monday.filter(m => m.ss.startsWith("?")).forEach(m => diag.push(["bad", `${m.nom} : numéro « ${m.ss.slice(1)} » invalide (01 à 99).`]));
+  const parCode = {}; monday.filter(m => /^\d\d$/.test(m.ss)).forEach(m => (parCode[m.ss] ??= []).push(m));
+  for (const [ss, ms] of Object.entries(parCode)) if (new Set(ms.map(m => norm(m.nom))).size > 1){
+    const enCours = ms.filter(m => !m.fin);
+    diag.push([enCours.length > 1 ? "bad" : "warn", `Code ${ss} porté par plusieurs personnes dans Monday : ${ms.map(m => `${m.nom} (${m.entite}${m.actif ? "" : ", archivé"})`).join(", ")}.`]);
+  }
+  const parNom = {}; monday.filter(m => /^\d\d$/.test(m.ss)).forEach(m => (parNom[norm(m.nom)] ??= []).push(m));
+  for (const ms of Object.values(parNom)) if (new Set(ms.map(m => m.ss)).size > 1) diag.push(["warn", `${ms[0].nom} a plusieurs codes : ${ms.map(m => `${m.ss} (${m.entite})`).join(", ")}. Règle visée : un code par personne.`]);
+  // Comparaison avec l'historique (reference.json)
+  for (const a of anciens){
+    const m = monday.filter(x => x.ss === a.ss);
+    if (!m.length) diag.push(["warn", `Code ${a.ss} (${a.nom}) est dans reference.json mais absent de Monday : conservé dans l'historique.`]);
+    else if (!m.some(x => norm(x.nom) === norm(a.nom))){
+      const libre = a.fin && (new Date(a.fin).getFullYear() + ret) <= new Date().getFullYear();
+      diag.push([libre ? "warn" : "bad", `Code ${a.ss} réattribué : ${a.nom} (historique${a.fin ? ", fin " + a.fin : ", sans date de fin"}) → ${m.map(x => x.nom).join(", ")} (Monday).${libre ? "" : ` La période de conservation de ${ret} ans n'est pas écoulée.`}`]);
+    }
+  }
+  monday.filter(m => /^\d\d$/.test(m.ss) && !m.debut).length && diag.push(["warn", `${monday.filter(m => /^\d\d$/.test(m.ss) && !m.debut).length} employé(s) sans date d'attribution dans Monday (colonne « Date d'attribution » à ajouter et remplir).`]);
+  // Fusion : Monday fait foi; l'historique conserve les attributions absentes de Monday
+  fusion = monday.filter(m => /^\d\d$/.test(m.ss)).map(m => {
+    const a = anciens.find(x => x.ss === m.ss && norm(x.nom) === norm(m.nom));
+    return {ss: m.ss, nom: m.nom, entite: m.entite, actif: m.actif && !m.fin, date_attribution: m.debut || a?.debut || "", date_fin: m.fin || (!m.actif ? (a?.fin || "") : ""), source: "Monday"};
+  });
+  for (const a of anciens) if (!fusion.some(f => f.ss === a.ss && norm(f.nom) === norm(a.nom)))
+    fusion.push({ss: a.ss, nom: a.nom, entite: a.entite, actif: false, date_attribution: a.debut, date_fin: a.fin, source: "Historique", remarque: a.remarque || "Absent de Monday"});
+  // Un ancien titulaire sans date de fin cède le code la veille de l'attribution au nouveau titulaire
+  for (const f of fusion) if (f.source === "Historique" && !f.date_fin){
+    const suiv = fusion.filter(x => x !== f && x.ss === f.ss && x.date_attribution).map(x => x.date_attribution).sort()[0];
+    if (suiv){ const d = new Date(suiv + "T12:00:00"); d.setDate(d.getDate() - 1); f.date_fin = d.toISOString().slice(0,10); f.remarque = (f.remarque ? f.remarque + "; " : "") + "fin déduite de la nouvelle attribution"; }
+  }
+  fusion.sort((x, y) => x.ss.localeCompare(y.ss) || (x.date_attribution || "").localeCompare(y.date_attribution || ""));
+  // Prochain code libre
+  // Plus petit code jamais utilisé (01 à 99); un code déjà utilisé n'est proposé qu'après la période de conservation
+  const utilises = new Set(fusion.map(f => f.ss));
+  const jamais = []; for (let i = 1; i <= 99; i++){ const c = pad(i); if (!utilises.has(c)) jamais.push(c); }
+  const liberables = [...new Set(fusion.map(f => f.ss))].filter(c => fusion.filter(f => f.ss === c).every(f => !f.actif && f.date_fin && new Date(f.date_fin).getFullYear() + ret <= new Date().getFullYear()));
+  $("#prochain").hidden = false;
+  $("#prochain").innerHTML = jamais.length ? `<span>Prochain code à attribuer :</span><b class="code">${jamais[0]}</b><span class="small muted">${jamais.length} code(s) jamais utilisé(s) sur 99. Inscrivez ce numéro dans Monday, avec la date d'attribution, lors de la création de l'employé.</span>`
+    : liberables.length ? `<span>Tous les codes ont servi. Code réutilisable (conservation de ${ret} ans écoulée) :</span><b class="code">${liberables[0]}</b>` : `<span style="color:var(--bad)">Aucun code libre : tous les codes sont utilisés ou encore en période de conservation.</span>`;
+  $("#diag").innerHTML = `<h3>Vérifications</h3>${diag.length ? `<ul class="diag">${diag.map(([k, t]) => `<li class="${k}">${k === "bad" ? "✖" : "⚠"} ${esc(t)}</li>`).join("")}</ul>` : `<p class="diag"><span class="ok">✓ Aucun problème détecté.</span></p>`}`;
+  $("#codesTable").innerHTML = `<div class="tablewrap"><table><thead><tr><th>Code</th><th>Nom</th><th>Compagnie</th><th>État</th><th>Date d'attribution</th><th>Date de fin</th><th>Source</th></tr></thead><tbody>
+    ${fusion.map((f, i) => `<tr class="${f.actif ? "" : "inactif"}"><td><b>${f.ss}</b></td><td>${esc(f.nom)}</td><td>${esc(f.entite)}</td><td>${f.actif ? `<span class="state ok">Actif</span>` : `<span class="state warn">Inactif</span>`}</td>
+      <td><input type="date" data-d="${i}:date_attribution" value="${esc(f.date_attribution)}"></td><td><input type="date" data-d="${i}:date_fin" value="${esc(f.date_fin)}"></td><td class="small">${esc(f.source)}${f.remarque ? " – " + esc(f.remarque) : ""}</td></tr>`).join("")}
+  </tbody></table></div><p class="small muted">Les dates saisies ici complètent le fichier de référence seulement; inscrivez-les aussi dans Monday, qui reste la source.</p>`;
+  $("#codesTable").querySelectorAll("[data-d]").forEach(i => i.onchange = () => { const [n, c] = i.dataset.d.split(":"); fusion[+n][c] = i.value; });
+  $("#btnGenerer").disabled = !root; $("#btnTelecharger").disabled = false;
+}
+function construireRef(){
+  const base = ref ? JSON.parse(JSON.stringify(ref)) : {};
+  base.version = auj();
+  base._source_arpenteurs = `Monday (exports importés le ${auj()}) + historique des codes. Un code n'est jamais réattribué avant la fin de la période de conservation.`;
+  base.arpenteurs = fusion.map(f => { const o = {ss:f.ss, nom:f.nom, entite:f.entite, actif:f.actif}; if (f.date_attribution) o.date_attribution = f.date_attribution; if (f.date_fin) o.date_fin = f.date_fin; if (f.remarque) o.remarque = f.remarque; return o; });
+  return base;
+}
+async function generer(){
+  if (!confirm(`Mettre à jour ${DEPOT}\\${SYS}\\reference.json avec ${fusion.length} attribution(s) ? Une copie de l'ancien fichier est conservée dans ${SYS}\\archives.`)) return;
+  try { const n = construireRef(); await ecrireRef(n); ref = n; log("#codesLog", `reference.json mis à jour (${fusion.length} attributions). Ancienne version archivée.`); showMsg("Fichier de référence mis à jour. Rechargez la Gestion des levés pour l'utiliser.", "ok"); }
+  catch(e){ log("#codesLog", `Échec : ${e.message}`); }
+}
+function telecharger(){
+  const b = new Blob([JSON.stringify(construireRef(), null, 1)], {type:"application/json"});
+  const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "reference.json"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* ===== Tables de référence ===== */
+function ligneNat(code = "", desc = ""){
+  const r = document.createElement("div"); r.className = "natrow";
+  r.innerHTML = `<input class="c" maxlength="3" placeholder="EXC"><input class="d" placeholder="Description"><button title="Retirer">✕</button>`;
+  r.querySelector(".c").value = code; r.querySelector(".d").value = desc;
+  r.querySelector(".c").oninput = e => e.target.value = e.target.value.toUpperCase().replace(/[^A-Z]/g, "");
+  r.querySelector("button").onclick = () => { if (confirm(`Retirer la nature ${r.querySelector(".c").value} ? Les levés qui l'utilisent deviendront non conformes.`)) r.remove(); };
+  $("#natRows").append(r);
+}
+function chargerTables(){
+  $("#natRows").innerHTML = ""; (ref?.nat || []).forEach(n => ligneNat(n.code, n.description));
+  $("#brDem").value = (ref?.brutes?.demander || [".dc",".job",".jxl",".xcf",".dbx"]).join(", ");
+  $("#brGnss").value = (ref?.brutes?.gnss || [".t01",".t02",".t04",".obs",".nav",".rnx",".ubx"]).join(", ");
+}
+async function enregistrerTables(){
+  const nat = [], err = [];
+  for (const r of $("#natRows").children){ const c = r.querySelector(".c").value, d = r.querySelector(".d").value.trim(); if (!c && !d) continue; if (!/^[A-Z]{3}$/.test(c)) err.push(`« ${c} » doit compter 3 lettres`); else if (nat.some(n => n.code === c)) err.push(`« ${c} » en double`); else nat.push({code:c, description:d}); }
+  if (err.length) return alert("À corriger :\n" + err.join("\n"));
+  const ext = v => v.split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean).map(x => x.startsWith(".") ? x : "." + x);
+  const n = ref ? JSON.parse(JSON.stringify(ref)) : {arpenteurs: []};
+  n.nat = nat.sort((a, b) => a.code.localeCompare(b.code)); n.brutes = {...(n.brutes || {}), demander: ext($("#brDem").value), gnss: ext($("#brGnss").value)}; n.version = auj();
+  if (!confirm(`Enregistrer ${nat.length} natures et les extensions dans reference.json ? L'ancienne version est archivée.`)) return;
+  try { await ecrireRef(n); ref = n; log("#tablesLog", `Tables enregistrées (${nat.length} natures).`); } catch(e){ log("#tablesLog", `Échec : ${e.message}`); }
+}
+
+/* ===== Interface ===== */
+function ouvrir(tab){ document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab)); document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab); }
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => ouvrir(b.dataset.tab));
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => ouvrir(b.dataset.go));
+$("#btnPick").onclick = pick;
+$("#fMonday").onchange = e => importer([...e.target.files]);
+$("#retention").onchange = analyser;
+$("#btnGenerer").onclick = generer; $("#btnTelecharger").onclick = telecharger;
+$("#btnAjNat").onclick = () => ligneNat(); $("#btnTables").onclick = enregistrerTables;
+if (location.hash && document.querySelector(`[data-panel="${location.hash.slice(1)}"]`)) ouvrir(location.hash.slice(1));
+if (!("showDirectoryPicker" in window)){ $("#noSupport").hidden = false; $("#btnPick").disabled = true; } else restaurer();
+</script>
+</body>
+</html>

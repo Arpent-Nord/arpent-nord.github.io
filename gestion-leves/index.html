@@ -272,7 +272,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.11 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.13 (2026-10-26).</footer>
 </main>
 
 <script>
@@ -295,6 +295,14 @@ const isGnss = n => BRUT_GNSS.includes(ext(n)) || /\.\d\d[ongl]$/i.test(n);
 const TYPES = {"1":"Levé","2":"Implantation","3":"Quantité","4":"TQC","5":"Contrôle","6":"Relevé conjoint","7":"Tiers"};
 let NAT = {ANC:"Ancrage",ARM:"Armature",BAT:"Bathymétrie",BET:"Béton",BLL:"Ballast",BOR:"Bordure",COF:"Coffrage",CUL:"Culée",DEC:"Décapage",DIV:"Divers",DRA:"Drainage",EMP:"Empierrement",ENV:"Environnement",EXC:"Déblai, terrain excavé",FOR:"Forage",FOS:"Fossé",GAZ:"Conduites de gaz",GEO:"Géogrille",GLI:"Glissière",GRF:"Granulaire de fondation (MG20)",GRS:"Granulaire de sous-fondation (MG112)",INF:"Infra",INI:"Terrain initial",JPV:"Juste pour voir",MEM:"Membrane géotextile",MON:"Monitoring de structure",MUR:"Mur de soutènement",PAL:"Palplanche",PAV:"Pavage",PIE:"Pieux / caissons",PIL:"Pile de réserve",PLU:"Égout pluvial",PON:"Pont et ponceau",POU:"Poutre",REM:"Remblai",ROB:"Boulon d'ancrage",ROC:"Roc",SAN:"Égout sanitaire",SCI:"Sciage",SIG:"Signalisation routière",SON:"Sondage",SST:"Santé et sécurité",STA:"Réseau de stations",SUE:"Surexcavation",TAB:"Tablier",TNN:"Terrain naturel",TRA:"Transition",TRO:"Trottoir",UTI:"Utilités publiques"};
 let ARPENTEURS = {}; // ss -> nom (chargé de _SYSTEME/reference.json)
+let ACTIFS = null;   // codes actifs (liste « Déposé par »)
+let ARP_HIST = {};   // ss -> [{nom, debut, fin}] : un code peut avoir eu plusieurs titulaires au fil du temps
+// Arpenteur titulaire du code à la date du levé (AAAA-MM-JJ); sans date, le titulaire le plus récent
+function arpenteurA(ss, date){
+  const h = ARP_HIST[ss]; if (!h || !h.length) return "";
+  if (date){ const m = h.find(a => (!a.debut || a.debut <= date) && (!a.fin || date <= a.fin)); if (m) return m.nom; if (h.some(a => a.debut || a.fin)) return ""; }
+  return h[h.length - 1].nom;
+}
 const ARBO = ["00_LEVES_A_TRAITER","01_LEVES","01_LEVES/00_TERRAINS","01_LEVES/01_A_VERIFIER","01_LEVES/02_DOUBLONS","01_LEVES/99_NDA-001",
  "02_IMPLANTATION","02_IMPLANTATION/00_A_INTEGRER","02_IMPLANTATION/01_STATIONS","02_IMPLANTATION/02_FICHIERS","02_IMPLANTATION/03_A_CLASSER",
  "03_PLANS","03_PLANS/01_ARCHITECTURE/01_PDF","03_PLANS/01_ARCHITECTURE/02_DWG","03_PLANS/02_STRUCTURE/01_PDF","03_PLANS/02_STRUCTURE/02_DWG",
@@ -401,6 +409,7 @@ function parseLeve(name){
   if (!NAT[r.nat]) r.erreurs.push(`nature « ${r.nat} » absente de la table NAT`);
   if (!/^\d\d$/.test(r.ss) || r.ss === "00") r.erreurs.push(`code arpenteur « ${r.ss} » invalide (01 à 99)`);
   else if (Object.keys(ARPENTEURS).length && !ARPENTEURS[r.ss]) r.erreurs.push(`code arpenteur ${r.ss} absent de la liste`);
+  else if (Object.keys(ARP_HIST).length && !arpenteurA(r.ss, r.date)) r.erreurs.push(`code arpenteur ${r.ss} non attribué à la date du levé (${r.date})`);
   if (!contratParSect(r.sect)) r.erreurs.push(`secteur ${r.sect} n'appartient à aucun contrat actif`);
   r.ok = r.erreurs.length === 0;
   return r;
@@ -463,13 +472,23 @@ async function loadReference(){
   if (!t) return;
   try {
     const ref = JSON.parse(t);
-    if (Array.isArray(ref.arpenteurs)) ARPENTEURS = Object.fromEntries(ref.arpenteurs.filter(a => a.actif !== false).map(a => [String(a.ss).padStart(2,"0"), a.nom]));
+    // Tous les codes servent à valider les noms (anciens levés compris); seuls les actifs sont proposés au dépôt
+    if (Array.isArray(ref.arpenteurs)){
+      ARP_HIST = {};
+      for (const a of [...ref.arpenteurs].sort((x, y) => (x.date_attribution || "").localeCompare(y.date_attribution || ""))) (ARP_HIST[String(a.ss).padStart(2,"0")] ??= []).push({nom: a.nom, debut: a.date_attribution || "", fin: a.date_fin || ""});
+      // un ancien titulaire sans date de fin cède le code la veille de la nouvelle attribution
+      for (const h of Object.values(ARP_HIST)) for (let i = 0; i < h.length - 1; i++) if (!h[i].fin && h[i+1].debut){ const d = new Date(h[i+1].debut + "T12:00:00"); d.setDate(d.getDate() - 1); h[i].fin = d.toISOString().slice(0,10); }
+      ARPENTEURS = Object.fromEntries(Object.entries(ARP_HIST).map(([ss, h]) => [ss, h[h.length - 1].nom]));
+      ACTIFS = new Set(ref.arpenteurs.filter(a => a.actif !== false).map(a => String(a.ss).padStart(2,"0")));
+      // liste « Déposé par » : titulaire actif du code
+      for (const a of ref.arpenteurs) if (a.actif !== false) ARPENTEURS[String(a.ss).padStart(2,"0")] = a.nom;
+    }
     if (Array.isArray(ref.nat)) NAT = Object.fromEntries(ref.nat.map(n => [n.code, n.description]));
     if (Array.isArray(ref.brutes?.demander)) BRUT_DEMANDER = ref.brutes.demander.map(x => x.toLowerCase());
     if (Array.isArray(ref.brutes?.gnss)) BRUT_GNSS = ref.brutes.gnss.map(x => x.toLowerCase());
   } catch(e){ showMsg("Le fichier _SYSTEME/reference.json est illisible : la liste par défaut est utilisée."); }
   const sel = $("#deposant"), cur = localStorage.getItem("an.deposant") || "";
-  sel.innerHTML = `<option value="">— choisir —</option>` + Object.entries(ARPENTEURS).map(([ss,n]) => `<option value="${esc(n)}" ${n===cur?"selected":""}>${ss} – ${esc(n)}</option>`).join("") + `<option value="Bureau">Bureau</option>`;
+  sel.innerHTML = `<option value="">— choisir —</option>` + Object.entries(ARPENTEURS).filter(([ss]) => !ACTIFS || ACTIFS.has(ss)).map(([ss,n]) => `<option value="${esc(n)}" ${n===cur?"selected":""}>${ss} – ${esc(n)}</option>`).join("") + `<option value="Bureau">Bureau</option>`;
   if (cur && !sel.value){ sel.insertAdjacentHTML("beforeend", `<option selected>${esc(cur)}</option>`); }
 }
 
@@ -695,7 +714,7 @@ function corrMessage(l){
   if (!l.corr) return `<span class="muted">Corrigez le nom, ou inscrivez un motif pour déposer tel quel.</span>`;
   if (l.corr.length !== 16) return `<span style="color:var(--warn)">${l.corr.length} caractère(s) sur 16</span>`;
   const pc = parseLeve(l.corr + ".txt");
-  return pc.ok ? `<span style="color:var(--ok)">✓ Conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${ARPENTEURS[pc.ss] ? " · " + esc(ARPENTEURS[pc.ss]) : ""}</span>`
+  return pc.ok ? `<span style="color:var(--ok)">✓ Conforme : ${esc(pc.date)} · secteur ${esc(pc.sect)} · ${esc(TYPES[pc.typeNum])} · ${esc(NAT[pc.nat])}${arpenteurA(pc.ss, pc.date) ? " · " + esc(arpenteurA(pc.ss, pc.date)) : ""}</span>`
     : `<span style="color:var(--warn)">${pc.erreurs.map(esc).join(" · ")}</span>`;
 }
 const corrValide = l => l.corr && l.corr.length === 16 && parseLeve(l.corr + ".txt").ok;
@@ -713,7 +732,7 @@ function renderPending(){
     const pr = l.parse;
     return `<div class="lot">
       <div class="lot-head"><span class="lot-name">${esc(l.nom)}</span>${etat}</div>
-      ${pr ? `<div class="chips">${pr.date?`<span class="chip">${pr.date}</span>`:""}${pr.sect?`<span class="chip">Secteur ${esc(pr.sect)}</span>`:""}${TYPES[pr.typeNum]?`<span class="chip">${TYPES[pr.typeNum]}</span>`:""}${NAT[pr.nat]?`<span class="chip">${esc(pr.nat)} – ${esc(NAT[pr.nat])}</span>`:""}${ARPENTEURS[pr.ss]?`<span class="chip">${esc(ARPENTEURS[pr.ss])}</span>`:""}${modif?`<span class="chip">Version _MODIF incluse</span>`:""}</div>` : ""}
+      ${pr ? `<div class="chips">${pr.date?`<span class="chip">${pr.date}</span>`:""}${pr.sect?`<span class="chip">Secteur ${esc(pr.sect)}</span>`:""}${TYPES[pr.typeNum]?`<span class="chip">${TYPES[pr.typeNum]}</span>`:""}${NAT[pr.nat]?`<span class="chip">${esc(pr.nat)} – ${esc(NAT[pr.nat])}</span>`:""}${arpenteurA(pr.ss, pr.date)?`<span class="chip">${esc(arpenteurA(pr.ss, pr.date))}</span>`:""}${modif?`<span class="chip">Version _MODIF incluse</span>`:""}</div>` : ""}
       ${pr && pr.erreurs.length ? `<ul class="err">${pr.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
       ${pr && !pr.ok && l.leveNom ? `<div class="corr">
         <div class="row" style="align-items:flex-start">
@@ -920,7 +939,7 @@ async function repartir(liste){
           Statut: !p || p.ok ? "À traiter" : "À vérifier",
           NomFichier: l.leve || "(documents)", Nom_terrain: l.meta?.nom_terrain || "", Date_Leve: p?.date || "", Secteur: p?.sect || "",
           Type: p ? (TYPES[p.typeNum] || p.typeNum || "") : "Documents terrain", NAT: p?.nat || "", Nature: p ? (NAT[p.nat] || "") : "",
-          SS: p?.ss || "", Arpenteur: p ? (ARPENTEURS[p.ss] || "") : "", Remarques: l.meta?.remarque || "",
+          SS: p?.ss || "", Arpenteur: p ? (arpenteurA(p.ss, p.date) || "") : "", Remarques: l.meta?.remarque || "",
           Photos: photos.length ? `${photos.length} photo(s)` : "", Carnet: carnets.join(", "), Version_modifiee: modif, Instrument: l.meta?.instrument || "", Autres_fichiers: autres.join(", "),
           Dossier: `00_LEVES_A_TRAITER\\${nomLot}`, Depose_par: l.meta?.depose_par || "", Date_Depot: l.date, Date_Repartition: nowIso(),
           Traite_par:"", Date_Traitement:"", Dessin:"", Mis_dans_DWG:"", Verifie:"",
@@ -1227,6 +1246,7 @@ window.addEventListener("beforeunload", e => { if (idxDirty || pending.length){ 
 
 // Garde-fou : cette page doit être publiée dans /gestion-leves/, pas à la racine du site
 if (!/gestion-leves/i.test(location.pathname) && location.protocol.startsWith("http")) showMsg("Attention : cette page est publiée à la racine du site et remplace l'accueil de la boîte à outils. Sur GitHub, elle doit se trouver dans le dossier « gestion-leves ».");
+if (location.hash){ const b = document.querySelector(`nav button[data-tab="${location.hash.slice(1)}"]`); if (b) setTimeout(() => b.click(), 0); }
 if (!("showDirectoryPicker" in window)){ $("#noSupport").hidden = false; $("#btnPick").disabled = true; }
 else tryRestore();
 </script>
