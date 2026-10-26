@@ -109,11 +109,16 @@ td.ed.modif input,td.ed.modif select{border-color:var(--accent);background:var(-
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 </style>
+<style id="an-retour-style">/* Bouton standard de retour à la boîte à outils Arpent-Nord (an-retour) */
+.an-retour{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:999px;border:1.5px solid #0b6e69;color:#0b6e69;background:#fff;font:600 14px/1.2 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-decoration:none;white-space:nowrap;flex:none;margin:0 10px 0 0}
+.an-retour:hover,.an-retour:focus-visible{background:#0b6e69;color:#fff;outline:none}
+@media (prefers-color-scheme:dark){.an-retour{background:transparent;color:#3cc4b8;border-color:#3cc4b8}.an-retour:hover,.an-retour:focus-visible{background:#3cc4b8;color:#06211f}}
+@media print{.an-retour{display:none}}</style>
 </head>
 <body>
 <main>
 <header>
-  <a class="back" href="/">‹ Boîte à outils</a>
+  <a class="an-retour" href="https://arpent-nord.github.io/" title="Retour à la boîte à outils">‹ Boîte à outils</a>
   <h1>Gestion des levés</h1>
   <p>Dépôt des levés, répartition par contrat et index. Les fichiers sont écrits directement dans votre dossier SharePoint synchronisé : rien ne passe par Internet.</p>
 </header>
@@ -127,7 +132,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   <button class="btn" id="btnReconnect" hidden>Reconnecter</button>
   <span class="field" style="flex-basis:100%"><label for="racine" class="small">Chemin Windows de ce dossier (pour copier les chemins vers l'Explorateur, facultatif)</label>
     <input id="racine" placeholder="D:\ARPENT-NORD\Projet Arpent-Nord - Documents\General\01_CONTRATS\99_EN RODAGE" style="width:100%"></span>
-  <span class="hint" id="connHint">Choisissez le dossier <b>…\General\01_CONTRATS\01_ACTIFS</b> synchronisé par OneDrive. La boîte de dépôt « 01 - TRAITEMENT » y sera créée si elle n'existe pas.</span>
+  <span class="hint" id="connHint">Choisissez le dossier <b>…\General\01_CONTRATS\01_ACTIFS</b> synchronisé par OneDrive. La boîte de dépôt « 01_TRAITEMENT » y sera créée si elle n'existe pas.</span>
 </section>
 
 <div id="globalMsg"></div>
@@ -173,7 +178,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 <section data-panel="boite" hidden>
   <div class="panel">
     <div class="row" style="justify-content:space-between;align-items:center">
-      <h2 style="margin:0">Boîte de dépôt – 01 - TRAITEMENT</h2>
+      <h2 style="margin:0">Boîte de dépôt – 01_TRAITEMENT</h2>
       <div class="row">
         <button class="btn" id="btnRefresh">Actualiser</button>
         <button class="btn" id="btnSeen">Marquer tout comme vu</button>
@@ -267,17 +272,18 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.10 (2026-10-23).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.11 (2026-10-23).</footer>
 </main>
 
 <script>
 "use strict";
 /* ===== Constantes ===== */
-const DEPOT = "01 - TRAITEMENT";
+const DEPOT = "01_TRAITEMENT";
+const DEPOT_ANCIEN = "01 - TRAITEMENT";   // ancien nom, encore utilisé côté MECATECH
 const SYS = "_SYSTEME";
 const INFO_PATH = ["11_ADMIN", "CONTRAT_INFO.json"];
 const INDEX_PATH = ["01_LEVES", "INDEX_LEVES.csv"];
-const RE_CONTRAT = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{4})(?=$|[_ ])/i;
+const RE_CONTRAT = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})(?=$|[_ ])/i;
 const EXT_LEVE = [".txt", ".csv"];
 const EXT_PHOTO = [".jpg", ".jpeg", ".png", ".heic", ".bmp", ".tif", ".tiff"];
 const EXT_CARNET = [".pdf",".doc",".docx",".rtf"];
@@ -428,6 +434,10 @@ async function useRoot(h){
   $("#connHint").innerHTML = /RODAGE|TEST/i.test(h.name) ? `<span style="color:var(--warn)">Mode rodage : vous travaillez dans « ${esc(h.name)} ». Rien n'est écrit dans les contrats actifs.</span>` :
     h.name.toUpperCase().includes("ACTIF") ? "Connecté. Les dossiers des contrats AN- et MA- sont reconnus automatiquement." :
     `<span style="color:var(--warn)">Attention : le dossier choisi s'appelle « ${esc(h.name)} ». Il devrait s'agir de 01_ACTIFS.</span>`;
+  if (!(await exists(root, DEPOT)) && (await exists(root, DEPOT_ANCIEN))){
+    showMsg(`La boîte de dépôt porte encore l'ancien nom « ${DEPOT_ANCIEN} ». Renommez ce dossier en « ${DEPOT} » dans l'Explorateur Windows (son contenu, dont _SYSTEME, est conservé), puis cliquez sur « Choisir le dossier » de nouveau.`);
+    $("#connDot").classList.remove("on"); root = null; return;
+  }
   await dir(root, [DEPOT, SYS], true);
   await loadReference();
   await scanContrats();
@@ -604,7 +614,7 @@ function majPreview(){
 }
 async function creerContrat(){
   const num = $("#cNum").value.trim().toUpperCase(), desc = clean($("#cDesc").value), sect = $("#cSect").value.trim().toUpperCase();
-  if (!/^(AN-\d{2}-\d{3}|MA-\d{2}-\d{4})$/.test(num)) return alert("Numéro invalide : AN-AA-XXX ou MA-AA-XXXX.");
+  if (!/^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})$/.test(num)) return alert("Numéro invalide : AN-AA-XXX, MA-AA-XXX ou MA-AA-XXXX.");
   if (!desc) return alert("Ajoutez une description courte.");
   if (!/^[A-Z0-9]{4}$/.test(sect)) return alert("Le code de secteur doit compter exactement 4 lettres ou chiffres.");
   if (contrats.some(c => c.numero === num)) return alert(`Le contrat ${num} existe déjà.`);
@@ -1119,7 +1129,7 @@ async function lancerBilan(){
   bilan = [];
   const parSect = {};
   for await (const [name, h] of root.entries()){
-    if (h.kind !== "directory" || name === DEPOT || name.startsWith(".") || name.startsWith("_")) continue;
+    if (h.kind !== "directory" || name === DEPOT || name === DEPOT_ANCIEN || name.startsWith(".") || name.startsWith("_")) continue;
     const m = name.match(RE_CONTRAT);
     const racine = []; const fichiersRacine = [];
     for await (const [n, x] of h.entries()) (x.kind === "directory" ? racine : fichiersRacine).push(n);
