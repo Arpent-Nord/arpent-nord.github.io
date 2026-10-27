@@ -158,6 +158,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
   <button role="tab" data-tab="accueil" aria-selected="true">Accueil</button>
   <button role="tab" data-tab="codes" aria-selected="false">Codes arpenteurs</button>
   <button role="tab" data-tab="tables" aria-selected="false">Tables de référence</button>
+  <button role="tab" data-tab="creation" aria-selected="false">Contrat de test</button>
 </nav>
 
 <!-- ACCUEIL -->
@@ -165,9 +166,27 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
   <div class="adm-cards">
     <div class="adm-card"><h3>Codes arpenteurs</h3><p>Importer les listes d'employés de Monday, détecter les problèmes de codes, proposer le prochain code libre et mettre à jour le fichier de référence.</p><button class="btn go" data-go="codes">Ouvrir</button></div>
     <div class="adm-card"><h3>Tables de référence</h3><p>Natures de levé (NAT), extensions des données brutes et adresses SharePoint utilisées pour valider et classer les levés.</p><button class="btn go" data-go="tables">Ouvrir</button></div>
+    <div class="adm-card"><h3>Contrat de test (rodage)</h3><p>Créer dans 99_EN RODAGE un dossier de contrat nommé selon NDA-001 (NUMÉRO - CLIENT - SITE) avec l'arborescence complète, pour les essais.</p><button class="btn go" data-go="creation">Ouvrir</button></div>
     <div class="adm-card"><h3>Activation des contrats</h3><p>Valider l'arborescence d'un contrat créé par l'administration et déclarer ses secteurs (numéro de contrat ou WBS).</p><a class="btn go" href="/gestion-leves/#contrats">Ouvrir</a></div>
     <div class="adm-card"><h3>Bilan des contrats</h3><p>Vue d'ensemble, en lecture seule, de tous les dossiers de contrats : arborescence, levés en attente, index existants, conflits de secteur.</p><a class="btn go" href="/gestion-leves/#bilan">Ouvrir</a></div>
     <div class="adm-card"><h3>Catalogue des répertoires</h3><p>Dossiers spécifiques aux projets (04_CLOUD à 11_TRACK…), leur utilisation et leur promotion dans la norme.</p><span class="state warn" style="align-self:flex-start">À venir</span></div>
+  </div>
+</section>
+
+<!-- CONTRAT DE TEST -->
+<section data-panel="creation" hidden>
+  <div class="panel">
+    <h2>Créer un contrat de test</h2>
+    <p class="small muted" style="margin-top:0"><b>Rodage seulement</b> : le dossier choisi doit être <code>99_EN RODAGE</code>. En production, l'arborescence est créée par l'administration à la mise en route du contrat (fiche d'ouverture). Le contrat s'active ensuite dans <a href="/gestion-leves/#contrats">Gestion des levés</a>.</p>
+    <div class="row" style="margin-top:10px;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div class="field"><label for="cNum">Numéro</label><input id="cNum" placeholder="AN-26-901" size="12"></div>
+      <div class="field" style="flex:1;min-width:160px"><label for="cClient">Client</label><input id="cClient" placeholder="STEMARIE" style="width:100%"></div>
+      <div class="field" style="flex:1;min-width:160px"><label for="cSite">Site</label><input id="cSite" placeholder="HUDL" style="width:100%"></div>
+      <button class="btn go" id="btnCreer" disabled>Créer le contrat</button>
+    </div>
+    <label class="small" style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" id="cAncien"> Ancien numéro MECATECH à 4 chiffres (MA-AA-XXXX) : seulement pour reproduire un contrat existant</label>
+    <p class="small muted" id="cPreview"></p>
+    <div class="log" id="creationLog"></div>
   </div>
 </section>
 
@@ -214,7 +233,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
   </div>
 </section>
 
-<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.3 (2026-10-27).</footer>
+<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.4 (2026-10-27).</footer>
 </main>
 
 <script>
@@ -262,7 +281,7 @@ async function useRoot(h){
   }
   ref = await lireRef();
   $("#connHint").innerHTML = ref ? `Fichier de référence chargé : ${ref.arpenteurs?.length ?? 0} attribution(s) de codes, ${ref.nat?.length ?? 0} natures. Version ${esc(ref.version || "?")}.` : `<span style="color:var(--warn)">Aucun reference.json trouvé dans ${DEPOT}\\${SYS} : il sera créé.</span>`;
-  $("#btnTables").disabled = false; chargerTables(); if (monday.length) analyser();
+  $("#btnTables").disabled = false; chargerTables(); if (monday.length) analyser(); majCreation();
 }
 async function pick(){ try { const h = await showDirectoryPicker({id:"an-actifs", mode:"readwrite"}); await idb.set("root", h); await useRoot(h); } catch(e){ if (e.name !== "AbortError") showMsg(esc(e.message)); } }
 async function restaurer(){
@@ -416,9 +435,55 @@ async function enregistrerTables(){
 }
 
 /* ===== Interface ===== */
-function ouvrir(tab){ document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab)); document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab); }
+function ouvrir(tab){ if (tab === "creation") setTimeout(majCreation); document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab)); document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab); }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => ouvrir(b.dataset.tab));
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => ouvrir(b.dataset.go));
+
+/* ===== Contrat de test (rodage) : arborescence de référence NDA-001 V03, section 6.1 ===== */
+const ARBO = ["00_LEVES_A_TRAITER","01_LEVES","01_LEVES/00_TERRAINS","01_LEVES/01_A_VERIFIER","01_LEVES/02_DOUBLONS","01_LEVES/99_NDA-001",
+ "02_IMPLANTATION","02_IMPLANTATION/00_A_INTEGRER","02_IMPLANTATION/01_STATIONS","02_IMPLANTATION/02_FICHIERS","02_IMPLANTATION/03_A_CLASSER","02_IMPLANTATION/04_VALIDATION",
+ "03_PLANS","03_PLANS/01_ARCHITECTURE/01_PDF","03_PLANS/01_ARCHITECTURE/02_DWG","03_PLANS/02_STRUCTURE/01_PDF","03_PLANS/02_STRUCTURE/02_DWG",
+ "03_PLANS/03_CIVIL/01_PDF","03_PLANS/03_CIVIL/02_DWG","03_PLANS/04_GEOMETRE/01_PDF","03_PLANS/04_GEOMETRE/02_DWG","03_PLANS/05_MECANIQUE/01_PDF","03_PLANS/05_MECANIQUE/02_DWG",
+ "04_PRODUCTION/01_DWG/01_EN_COURS","04_PRODUCTION/01_DWG/02_QTE","04_PRODUCTION/01_DWG/03_TQC","04_PRODUCTION/01_DWG/04_PLAN",
+ "04_PRODUCTION/02_PDF/01_EN_COURS","04_PRODUCTION/02_PDF/02_QTE","04_PRODUCTION/02_PDF/03_TQC/01_RAPPORT","04_PRODUCTION/02_PDF/04_PLAN","04_PRODUCTION/03_EXCEL/01_EN_COURS",
+ "05_LIVRABLES/01_CLIENT","05_LIVRABLES/02_INTERNE","05_LIVRABLES/03_TRANSMIS",
+ "06_DONNEES_BRUTES/01_DRONE/01_PROJET","06_DONNEES_BRUTES/01_DRONE/02_ORTHO","06_DONNEES_BRUTES/01_DRONE/03_CLOUD","06_DONNEES_BRUTES/02_SCAN","06_DONNEES_BRUTES/03_GNSS","06_DONNEES_BRUTES/04_STATION_TOTALE","06_DONNEES_BRUTES/05_MACHINE_CONTROL",
+ "07_PHOTOS/01_CHANTIER","07_PHOTOS/02_IMPLANTATION","07_PHOTOS/03_CONSTAT",
+ "08_PARTAGE/01_ENVOI","08_PARTAGE/02_RECEPTION","08_PARTAGE/03_TEMPORAIRE",
+ "09_DIVERS/01_RAPPORT_AUTOMATISE",
+ "10_ARCHIVES/01_DOCUMENTS","10_ARCHIVES/02_IMPLANTATION","10_ARCHIVES/03_PLANS","10_ARCHIVES/04_PRODUCTION","10_ARCHIVES/05_LIVRABLES","10_ARCHIVES/06_EXCEL",
+ "11_ADMIN"];
+const RE_CONTRAT = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})(?=$|[_ ])/i;
+const nettoyer = s => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/[^A-Z0-9-]+/g, "_").replace(/^_+|_+$/g, "");
+const nomRacine = (num, client, site) => [num, nettoyer(client), nettoyer(site)].filter(Boolean).join(" - ");
+const enRodage = () => !!root && /99_EN[ _]RODAGE/i.test(root.name);
+function majCreation(){
+  const num = $("#cNum").value.trim().toUpperCase(), ancien = /^MA-\d{2}-\d{4}$/.test(num);
+  $("#btnCreer").disabled = !enRodage();
+  $("#cPreview").innerHTML = !root ? "Choisissez d'abord le dossier (en haut de la page)."
+    : !enRodage() ? `<span style="color:var(--bad)">Le dossier choisi est « ${esc(root.name)} » : la création de contrat de test n'est permise que dans 99_EN RODAGE.</span>`
+    : num ? `Dossier créé : <b>${esc(nomRacine(num, $("#cClient").value, $("#cSite").value))}</b>${ancien && !$("#cAncien").checked ? " — numéro à 4 chiffres : cochez « Ancien numéro MECATECH » s'il s'agit d'un contrat existant" : ""}` : "";
+}
+async function creerContrat(){
+  if (!enRodage()) return majCreation();
+  const num = $("#cNum").value.trim().toUpperCase(), client = nettoyer($("#cClient").value), site = nettoyer($("#cSite").value);
+  if (/^MA-\d{2}-\d{4}$/.test(num) && !$("#cAncien").checked) return alert("Les nouveaux contrats MECATECH ont 3 chiffres (MA-AA-XXX, NDA-001 section 4). Pour reproduire un contrat existant à 4 chiffres, cochez « Ancien numéro MECATECH ».");
+  if (!/^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})$/.test(num)) return alert("Numéro invalide : AN-AA-XXX ou MA-AA-XXX (ancien numéro MECATECH : MA-AA-XXXX).");
+  if (!client) return alert("Inscrivez le client (NDA-001, 4.1 : NUMÉRO - CLIENT - SITE).");
+  for await (const [n, h] of root.entries()){ const m = h.kind === "directory" && n.match(RE_CONTRAT); if (m && m[1].toUpperCase() === num) return alert(`Le contrat ${num} existe déjà : « ${n} ». Renommez l'ancien dossier (ex. préfixe _) ou choisissez un autre numéro.`); }
+  const nom = nomRacine(num, client, site);
+  if (!confirm(`Créer « ${nom} » et ses ${ARBO.length} dossiers dans 99_EN RODAGE ?`)) return;
+  $("#btnCreer").disabled = true;
+  try {
+    const d = await root.getDirectoryHandle(nom, {create: true});
+    for (const p of ARBO){ let x = d; for (const s of p.split("/")) x = await x.getDirectoryHandle(s, {create: true}); }
+    log("#creationLog", `Contrat de test créé : ${nom} (${ARBO.length} dossiers). Activez-le dans Gestion des levés.`);
+    $("#cNum").value = $("#cClient").value = $("#cSite").value = ""; $("#cAncien").checked = false;
+  } catch(e){ log("#creationLog", `Échec : ${e.message}`); }
+  majCreation();
+}
+$("#btnCreer").onclick = creerContrat;
+["cNum", "cClient", "cSite"].forEach(id => $("#" + id).oninput = majCreation); $("#cAncien").onchange = majCreation;
 $("#btnPick").onclick = pick;
 $("#fMonday").onchange = e => importer([...e.target.files]);
 $("#retention").onchange = analyser;

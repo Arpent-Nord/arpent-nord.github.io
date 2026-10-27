@@ -259,16 +259,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     <div class="row" style="margin-top:12px"><button class="btn go" id="btnActiver">Activer le contrat</button></div>
     <div class="log" id="contratLog"></div>
   </div>
-  <details class="panel">
-    <summary><b>Créer un contrat de test</b> <span class="small muted">— rodage seulement; en production, les dossiers sont créés par l'administration</span></summary>
-    <div class="row" style="margin-top:10px">
-      <div class="field"><label for="cNum">Numéro</label><input id="cNum" placeholder="AN-26-901" size="12"></div>
-      <div class="field" style="flex:1;min-width:220px"><label for="cDesc">Description courte</label><input id="cDesc" placeholder="PILOTE_A"></div>
-      <div class="field"><label for="cSect">Secteur (SECT)</label><input id="cSect" maxlength="4" size="6" placeholder="A901"></div>
-      <button class="btn go" id="btnCreer">Créer le contrat</button>
-    </div>
-    <p class="small muted" id="cPreview" style="margin-bottom:0"></p>
-  </details>
+  <p class="small muted" style="margin:10px 2px">Contrat de test pour le rodage : il se crée maintenant dans l'<a href="/admin/#creation">Administration</a>, avec son arborescence complète. On l'active ensuite ici.</p>
 </section>
 
 <!-- BILAN -->
@@ -283,7 +274,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.15 (2026-10-27).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.17 (2026-10-27).</footer>
 </main>
 
 <script>/* qrcode-generator 1.4.4 — (c) Kazuhiko Arase — licence MIT — https://github.com/kazuhikoarase/qrcode-generator */
@@ -320,19 +311,6 @@ function arpenteurA(ss, date){
   if (date){ const m = h.find(a => (!a.debut || a.debut <= date) && (!a.fin || date <= a.fin)); if (m) return m.nom; if (h.some(a => a.debut || a.fin)) return ""; }
   return h[h.length - 1].nom;
 }
-const ARBO = ["00_LEVES_A_TRAITER","01_LEVES","01_LEVES/00_TERRAINS","01_LEVES/01_A_VERIFIER","01_LEVES/02_DOUBLONS","01_LEVES/99_NDA-001",
- "02_IMPLANTATION","02_IMPLANTATION/00_A_INTEGRER","02_IMPLANTATION/01_STATIONS","02_IMPLANTATION/02_FICHIERS","02_IMPLANTATION/03_A_CLASSER","02_IMPLANTATION/04_VALIDATION",
- "03_PLANS","03_PLANS/01_ARCHITECTURE/01_PDF","03_PLANS/01_ARCHITECTURE/02_DWG","03_PLANS/02_STRUCTURE/01_PDF","03_PLANS/02_STRUCTURE/02_DWG",
- "03_PLANS/03_CIVIL/01_PDF","03_PLANS/03_CIVIL/02_DWG","03_PLANS/04_GEOMETRE/01_PDF","03_PLANS/04_GEOMETRE/02_DWG","03_PLANS/05_MECANIQUE/01_PDF","03_PLANS/05_MECANIQUE/02_DWG",
- "04_PRODUCTION/01_DWG/01_EN_COURS","04_PRODUCTION/01_DWG/02_QTE","04_PRODUCTION/01_DWG/03_TQC","04_PRODUCTION/01_DWG/04_PLAN",
- "04_PRODUCTION/02_PDF/01_EN_COURS","04_PRODUCTION/02_PDF/02_QTE","04_PRODUCTION/02_PDF/03_TQC/01_RAPPORT","04_PRODUCTION/02_PDF/04_PLAN","04_PRODUCTION/03_EXCEL/01_EN_COURS",
- "05_LIVRABLES/01_CLIENT","05_LIVRABLES/02_INTERNE","05_LIVRABLES/03_TRANSMIS",
- "06_DONNEES_BRUTES/01_DRONE/01_PROJET","06_DONNEES_BRUTES/01_DRONE/02_ORTHO","06_DONNEES_BRUTES/01_DRONE/03_CLOUD","06_DONNEES_BRUTES/02_SCAN","06_DONNEES_BRUTES/03_GNSS","06_DONNEES_BRUTES/04_STATION_TOTALE","06_DONNEES_BRUTES/05_MACHINE_CONTROL",
- "07_PHOTOS/01_CHANTIER","07_PHOTOS/02_IMPLANTATION","07_PHOTOS/03_CONSTAT",
- "08_PARTAGE/01_ENVOI","08_PARTAGE/02_RECEPTION","08_PARTAGE/03_TEMPORAIRE",
- "09_DIVERS/01_RAPPORT_AUTOMATISE",
- "10_ARCHIVES/01_DOCUMENTS","10_ARCHIVES/02_IMPLANTATION","10_ARCHIVES/03_PLANS","10_ARCHIVES/04_PRODUCTION","10_ARCHIVES/05_LIVRABLES","10_ARCHIVES/06_EXCEL",
- "11_ADMIN"];
 const IDX_COLS = ["Statut","NomFichier","Nom_terrain","Date_Leve","Secteur","Type","NAT","Nature","SS","Arpenteur","Remarques","Photos","Carnet","Version_modifiee","Instrument","Autres_fichiers","Dossier","Chemin_Leve","Chemin_Brutes","Chemin_Photos","Depose_par","Date_Depot","Date_Repartition","Traite_par","Date_Traitement","Dessin","Mis_dans_DWG","Verifie","Validation"];
 
 /* ===== État ===== */
@@ -722,32 +700,6 @@ async function ecrireInfo(d, numero, nom, opts){
     ...opts, active: true, active_le: nowIso(), active_par: localStorage.getItem("an.deposant") || ""};
   delete info.sect;
   await writeFile(d, INFO_PATH, JSON.stringify(info, null, 2));
-}
-function majPreview(){
-  const num = $("#cNum").value.trim().toUpperCase(), desc = clean($("#cDesc").value);
-  if (!$("#cSect").dataset.touched) $("#cSect").value = sectDefaut(num);
-  $("#cPreview").textContent = num ? `Dossier créé : ${num}${desc ? "_" + desc : ""}` : "";
-}
-async function creerContrat(){
-  const num = $("#cNum").value.trim().toUpperCase(), desc = clean($("#cDesc").value), sect = $("#cSect").value.trim().toUpperCase();
-  if (!/^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})$/.test(num)) return alert("Numéro invalide : AN-AA-XXX, MA-AA-XXX ou MA-AA-XXXX.");
-  if (!desc) return alert("Ajoutez une description courte.");
-  if (!/^[A-Z0-9]{4}$/.test(sect)) return alert("Le code de secteur doit compter exactement 4 lettres ou chiffres.");
-  if (contrats.some(c => c.numero === num)) return alert(`Le contrat ${num} existe déjà.`);
-  if (contratParSect(sect)) return alert(`Le secteur ${sect} est déjà utilisé par ${contratParSect(sect).nom}.`);
-  const nom = `${num}_${desc}`;
-  $("#btnCreer").disabled = true;
-  try {
-    const d = await root.getDirectoryHandle(nom, {create:true});
-    for (const p of ARBO) await dir(d, p.split("/"), true);
-    await ecrireInfo(d, num, nom, {mode_secteur: "contrat", secteurs: sect === sectDefaut(num) ? [] : [{code: sect, description: ""}]});
-    await writeFile(d, INDEX_PATH, csvBuild([]));
-    log("#contratLog", `Contrat créé : ${nom} (secteur ${sect}, ${ARBO.length} dossiers)`);
-    await appendJournal("Création contrat", `${nom} – secteur ${sect}`);
-    $("#cNum").value = $("#cDesc").value = $("#cSect").value = ""; delete $("#cSect").dataset.touched; majPreview();
-    await scanContrats();
-  } catch(e){ log("#contratLog", `Échec : ${e.message}`); }
-  $("#btnCreer").disabled = false;
 }
 
 /* ===== Dépôt ===== */
@@ -1311,14 +1263,12 @@ $("#btnRefresh").onclick = scanBoite;
 $("#btnSeen").onclick = () => { localStorage.setItem("an.vu", nowIso()); renderBoite(); };
 $("#btnDeposer").onclick = deposer;
 $("#btnVider").onclick = () => { pending = []; lots = []; renderPending(); };
-$("#btnCreer").onclick = creerContrat;
+
 $("#btnIdxSave").onclick = saveIndex;
 $("#btnRevalider").onclick = revalider;
 $("#idxContrat").onchange = loadIndex;
 $("#idxFiltre").onchange = renderIndex;
 $("#deposant").onchange = e => localStorage.setItem("an.deposant", e.target.value);
-$("#cNum").oninput = majPreview; $("#cDesc").oninput = majPreview;
-$("#cSect").oninput = e => { e.target.dataset.touched = "1"; e.target.value = e.target.value.toUpperCase(); };
 const drop = $("#drop"), fi = $("#fileInput");
 drop.onclick = () => fi.click();
 drop.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); fi.click(); } };
