@@ -54,8 +54,11 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 .an-jour-j b{font-size:22px;letter-spacing:.02em}
 .an-jour-ex{font-size:13px;opacity:.85}
 .an-nw{white-space:nowrap}
+.an-jour-lien{color:inherit;text-decoration:underline dotted;text-underline-offset:3px}
 .an-jour-ex code{font:600 13px/1.2 ui-monospace,Consolas,monospace;letter-spacing:.04em}
 .an-jour-ex code i{font-style:normal;opacity:.55}
+.an-jour-s select{font:600 13px/1.2 system-ui,sans-serif;max-width:100%;margin-top:3px;padding:3px 6px;border-radius:8px;border:1px solid currentColor;background:transparent;color:inherit}
+.an-jour-s option,.an-jour-s optgroup{color:#111;background:#fff}
 @media print{.an-jour{display:none}}</style>
 <style id="accueil-mobile">
 .an-top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
@@ -79,7 +82,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 <body>
 <main>
   <header>
-    <div class="an-top"><img class="an-logo" id="anLogo" alt="Arpent-Nord construction" width="71" height="64"><div class="an-jour" id="anJour" aria-live="polite"><div class="an-jour-l1"><span class="an-jour-d" id="anJourD"></span><span class="an-jour-j">Jour <b id="anJourJ"></b></span></div><div class="an-jour-ex"><span class="an-nw">Levé <code id="anJourF"></code></span> <span class="an-nw">· Point <code id="anJourP"></code></span></div></div></div>
+    <div class="an-top"><img class="an-logo" id="anLogo" alt="Arpent-Nord construction" width="71" height="64"><div class="an-jour" id="anJour" aria-live="polite"><div class="an-jour-l1"><span class="an-jour-d" id="anJourD"></span><span class="an-jour-j">Jour <b id="anJourJ"></b></span></div><div class="an-jour-ex"><a class="an-nw an-jour-lien" href="/APP-PCodes/#nat" title="Structure du nom et table des natures (Pcodes et Liaisons)">Levé <code id="anJourF"></code></a> <span class="an-nw">· Point <code id="anJourP"></code></span></div><div class="an-jour-s" id="anJourSBox" hidden><select id="anJourS" aria-label="Contrat et secteur du levé"></select></div></div></div>
     <h1>Boîte à outils – Arpent-Nord</h1>
     <p>Les applications de l'équipe des arpenteurs. Vos fichiers restent sur votre appareil : rien n'est envoyé sur Internet.</p>
   </header>
@@ -87,15 +90,25 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   <section class="choose" aria-labelledby="chooseTitle">
     <h2 id="chooseTitle">Quel outil prendre ?</h2>
     <ul>
+      <li><b>Je cherche un code (Pcode), un code de liaison ou une commande de calcul au terrain</b> <span>→</span> <a href="#t-pcodes">Pcodes et Liaisons</a></li>
       <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
       <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
-      <li><b>Je cherche un code (Pcode), un code de liaison ou une commande de calcul au terrain</b> <span>→</span> <a href="#t-pcodes">Pcodes et Liaisons</a></li>
       <li><b>Je dépose mes fichiers de levé au bureau, ou je répartis ceux reçus</b> <span>→</span> <a href="#t-gestion">Gestion des levés</a></li>
       <li><b>Je travaille sur un projet de voie ferrée</b> <span>→</span> <a href="/voie-ferree/">Outils voie ferrée</a></li>
     </ul>
   </section>
 
   <div class="grid">
+    <article class="tool" id="t-pcodes">
+      <span class="tag">Codes · APP-PCodes</span>
+      <h2>Pcodes et Liaisons</h2>
+      <p>Trouve rapidement un Pcode ArpentNord sur le téléphone : tapez un chiffre (4, 41, 415) ou un mot (excavation, bordure). Aide terrain sur les liaisons (.1 à .7, _), les commandes de calcul (2P, 3PP, RECT…) et le nom du fichier de levé (types et natures).</p>
+      <p class="when"><b>Produit :</b> le numéro de code et sa description, à inscrire au carnet.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-PCodes/">Ouvrir l'outil</a>
+        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-PCodes#readme">Documentation</a>
+      </div>
+    </article>
     <article class="tool" id="t-leve">
       <span class="tag">Levé · version 8</span>
       <h2>Validation de levé</h2>
@@ -118,16 +131,6 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       </div>
     </article>
 
-    <article class="tool" id="t-pcodes">
-      <span class="tag">Codes · APP-PCodes</span>
-      <h2>Pcodes et Liaisons</h2>
-      <p>Trouve rapidement un Pcode ArpentNord sur le téléphone : tapez un chiffre (4, 41, 415) ou un mot (excavation, bordure). Aide terrain sur les liaisons (.1 à .7, _) et les commandes de calcul (2P, 3PP, RECT…).</p>
-      <p class="when"><b>Produit :</b> le numéro de code et sa description, à inscrire au carnet.</p>
-      <div class="actions">
-        <a class="btn go" href="/APP-PCodes/">Ouvrir l'outil</a>
-        <a class="btn doc" href="https://github.com/Arpent-Nord/APP-PCodes#readme">Documentation</a>
-      </div>
-    </article>
     <article class="tool desk" id="t-gestion">
       <span class="tag">Contrats · prototype</span>
       <h2>Gestion des levés <span class="bureau">ordinateur</span></h2>
@@ -160,6 +163,18 @@ document.getElementById('anLogo').src=AN_LOGO;
 // Bandeau du jour : date locale, jour de l'année (jour julien), ex. de nom de levé et de numéro de point (NDA-001, 10.2 et 10.3)
 (function(){
   const $=id=>document.getElementById(id);
+  // Secteurs des contrats reçus par lien terrain (Pcodes et Liaisons), gardés sur l'appareil
+  const lire=k=>{try{return JSON.parse(localStorage.getItem(k)||"null")}catch(_){return null}};
+  function sect(){const v=($("anJourS")&&$("anJourS").value)||"";return v.split("|")[1]||"";}
+  function liste(){
+    const s=lire("an.secteurs.v1")||{}, box=$("anJourSBox"), sel=$("anJourS"); if(!box)return;
+    const ks=Object.keys(s).sort(); box.hidden=!ks.length; if(!ks.length){sel.innerHTML="";return;}
+    let cur=""; try{cur=localStorage.getItem("an.jour.sect")||"";}catch(_){}
+    const e=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+    sel.innerHTML='<option value="">Secteur : choisir un contrat…</option>'+ks.map(k=>`<optgroup label="${e(k)}">${(s[k].s||[]).map(([c,ds,w])=>`<option value="${e(k+"|"+c)}">${e(c)}${w?" ("+e(w)+")":""}${ds?" – "+e(ds):""}</option>`).join("")}</optgroup>`).join("");
+    sel.value=[...sel.options].some(o=>o.value===cur)?cur:"";
+  }
+  window.anJourListe=()=>{liste();maj();};
   function maj(){
     const d=new Date(), y=d.getFullYear(), p=n=>String(n).padStart(2,"0");
     const j=Math.round((new Date(y,d.getMonth(),d.getDate())-new Date(y,0,0))/864e5);
@@ -167,12 +182,14 @@ document.getElementById('anLogo').src=AN_LOGO;
     const txt=d.toLocaleDateString("fr-CA",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
     $("anJourD").textContent=txt.charAt(0).toUpperCase()+txt.slice(1);
     $("anJourJ").textContent=jjj;
-    $("anJourF").innerHTML=`${String(y).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}<i>SECT#NATSS</i>`;
+    const sc=sect();$("anJourF").innerHTML=`${String(y).slice(2)}${p(d.getMonth()+1)}${p(d.getDate())}${sc?sc+"<i>#NATSS</i>":"<i>SECT#NATSS</i>"}`;
     $("anJourP").innerHTML=a?`${a}${jjj}<i>SS</i>001`:`<i>A</i>${jjj}<i>SS</i>001`;
     $("anJourP").title=a?"A = "+a+" (dernier chiffre de "+y+"), JJJ = "+jjj+", SS = votre code, 001 = premier point":"Année en 0 : A = dernier chiffre de l'année avant le début du contrat (NDA-001, 10.3)";
     $("anJour").title=`Jour ${jjj} de ${y}`;
   }
-  maj(); setInterval(maj,60000);
+  liste(); maj(); setInterval(maj,60000);
+  if($("anJourS"))$("anJourS").addEventListener("change",()=>{try{localStorage.setItem("an.jour.sect",$("anJourS").value)}catch(_){}maj();});
+  window.addEventListener("storage",e=>{if(e.key==="an.secteurs.v1")window.anJourListe();});
 })();
 </script>
 </body>
