@@ -197,6 +197,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
     <p class="small muted" style="margin-top:0">Règles : un code par personne, de 01 à 99, commun aux deux compagnies, attribué en prenant le plus petit numéro jamais utilisé; un code n'est <b>jamais réattribué</b> avant la fin de la période de conservation. Chaque attribution garde sa date de début et de fin : un levé est relié à l'arpenteur qui détenait le code à la date du levé.</p>
     <div class="row">
       <div class="field"><label for="fMonday">Exports Excel de Monday (ÉQUIPES et COÉQUIPIERS)</label><input type="file" id="fMonday" accept=".xlsx,.xls,.csv" multiple></div>
+      <div class="small" id="fMondayListe" style="margin-top:4px"></div>
       <div class="field"><label for="retention">Période de conservation (années, à valider)</label><input type="number" id="retention" min="1" max="50" value="5" style="width:90px"></div>
     </div>
     <p class="small muted">Dans Monday : ouvrez le tableau → menu « … » → <b>Exporter vers Excel</b>. Faites-le pour les deux tableaux, puis choisissez les deux fichiers ici. Les colonnes lues sont <b>Name</b>, <b>Numéro arpenteur</b> (ou <b># arpenteur</b>), et si elles existent <b>Date d'attribution</b> et <b>Date de fin</b>; le groupe <b>ARCHIVE</b> indique un employé inactif.</p>
@@ -233,7 +234,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
   </div>
 </section>
 
-<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.4 (2026-10-27).</footer>
+<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.5 (2026-10-27).</footer>
 </main>
 
 <script>
@@ -311,7 +312,7 @@ function lireExport(wb, fichier){
       const nonVides = cells.filter(Boolean);
       if (!nonVides.length){ entete = null; continue; }
       if (/^(NAME|NOM)$/i.test(cells[0]) && cells.some(c => /arpenteur|code/i.test(c))){
-        entete = {nom:0, code: cells.findIndex(c => /arpenteur|^code/i.test(c) && !/date/i.test(c)), debut: cells.findIndex(c => /attribution|d[ée]but/i.test(c)), fin: cells.findIndex(c => /date de fin|^fin/i.test(c))};
+        entete = {nom:0, code: cells.findIndex(c => /arpenteur|^code/i.test(c) && !/date/i.test(c)), debut: (i => i >= 0 ? i : cells.findIndex(c => /^date de d[ée]but$/i.test(c)))(cells.findIndex(c => /attribution/i.test(c))), fin: (i => i >= 0 ? i : cells.findIndex(c => /^fin$/i.test(c)))(cells.findIndex(c => /date de fin/i.test(c)))};
         continue;
       }
       if (!entete){ if (nonVides.length === 1) groupe = nonVides[0]; continue; }
@@ -324,12 +325,22 @@ function lireExport(wb, fichier){
   return out;
 }
 async function importer(files){
-  monday = [];
   for (const f of files){
-    try { const wb = XLSX.read(await f.arrayBuffer(), {type:"array"}); const l = lireExport(wb, f.name); monday.push(...l); log("#codesLog", `${f.name} : ${l.length} employé(s) lus.`); }
-    catch(e){ log("#codesLog", `${f.name} : lecture impossible (${e.message}).`); }
+    try {
+      const wb = XLSX.read(await f.arrayBuffer(), {type:"array"}); const l = lireExport(wb, f.name);
+      const ents = new Set(l.map(x => x.entite));
+      monday = monday.filter(m => m.source !== f.name && !ents.has(m.entite));   // remplace la version précédente du même tableau
+      monday.push(...l); log("#codesLog", `${f.name} : ${l.length} employé(s) lus (${[...ents].join(", ") || "aucune entité"}).`);
+    } catch(e){ log("#codesLog", `${f.name} : lecture impossible (${e.message}).`); }
   }
-  analyser();
+  $("#fMonday").value = "";
+  majListeMonday(); analyser();
+}
+function majListeMonday(){
+  const parSrc = {}; monday.forEach(m => (parSrc[m.source] ??= {n: 0, e: m.entite}).n++);
+  const l = Object.entries(parSrc);
+  $("#fMondayListe").innerHTML = l.length ? `Importés : ${l.map(([s, x]) => `<b>${esc(x.e)}</b> (${esc(s)}, ${x.n})`).join(" · ")} <button type="button" class="btn small" id="btnViderMonday">Vider</button>` : "";
+  const b = $("#btnViderMonday"); if (b) b.onclick = () => { monday = []; fusion = []; majListeMonday(); log("#codesLog", "Fichiers importés retirés."); analyser(); };
 }
 
 /* ===== Analyse ===== */
@@ -340,6 +351,8 @@ function analyser(){
   const anciens = (ref?.arpenteurs || []).map(a => ({ss: pad(a.ss), nom: a.nom, entite: a.entite || "", actif: a.actif !== false, debut: a.date_attribution || "", fin: a.date_fin || "", remarque: a.remarque || ""}));
   const diag = [];
   // Problèmes dans Monday
+  const entites = new Set(monday.map(m => m.entite));
+  for (const e of ["ARPENT-NORD", "MECATECH"]) if (!entites.has(e)) diag.push(["bad", `Aucun fichier ${e} importé : ses employés apparaîtront « absents de Monday ». Importez aussi l'export ${e === "MECATECH" ? "COÉQUIPIERS (MECATECH)" : "ÉQUIPES (ARPENT-NORD)"}.`]);
   const actifsSansCode = monday.filter(m => m.actif && !m.ss && !/ADMINISTRATION/i.test(norm(m.groupe)));
   actifsSansCode.forEach(m => diag.push(["warn", `${m.nom} (${m.entite}) est actif dans Monday mais n'a pas de numéro d'arpenteur.`]));
   monday.filter(m => m.ss.startsWith("?")).forEach(m => diag.push(["bad", `${m.nom} : numéro « ${m.ss.slice(1)} » invalide (01 à 99).`]));
