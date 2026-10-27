@@ -100,6 +100,7 @@ td.ed.modif input,td.ed.modif select{border-color:var(--accent);background:var(-
 .galerie figcaption{font-size:.78rem;padding:4px 6px;color:var(--muted);word-break:break-all}
 .galerie .noprev{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem;text-align:center;padding:8px}
 .secthead,.sectrow{display:grid;grid-template-columns:110px 160px 1fr 36px;gap:8px;align-items:center}
+.ancrow{display:grid;grid-template-columns:110px 24px 110px 1fr 36px;gap:8px;align-items:center;margin-top:4px}.ancrow input.ac,.ancrow input.an{text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}.ancrow button{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;height:32px;cursor:pointer}
 #aPrefBox input{width:70px;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.05em}
 .secthead{margin:6px 0 2px}
 .sectrow{margin-top:4px}
@@ -255,6 +256,11 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
         </div>
       </div>
       <p class="small muted" id="aAide" style="margin:6px 0 0"></p>
+      <div style="margin-top:12px"><label>Anciens secteurs (numéro de contrat ou secteur remplacé)</label>
+        <p class="small muted" style="margin:2px 0 6px">Si des levés ont été faits sous un ancien code (ex. numéro de contrat changé en cours de mandat), déclarez-le ici, en tout temps : ces levés seront reconnus et leur nom corrigé sera proposé d'office. Les données brutes et les rapports gardent leur nom d'origine.</p>
+        <div id="aAnciens"></div>
+        <button type="button" class="btn small" id="btnAjAncien" style="margin-top:6px">+ Ajouter un ancien secteur</button>
+      </div>
     </div>
     <div class="row" style="margin-top:12px"><button class="btn go" id="btnActiver">Activer le contrat</button></div>
     <div class="log" id="contratLog"></div>
@@ -274,7 +280,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.17 (2026-10-27).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.19 (2026-10-27).</footer>
 </main>
 
 <script>/* qrcode-generator 1.4.4 — (c) Kazuhiko Arase — licence MIT — https://github.com/kazuhikoarase/qrcode-generator */
@@ -405,7 +411,11 @@ function parseLeve(name){
   if (!/^\d\d$/.test(r.ss) || r.ss === "00") r.erreurs.push(`code arpenteur « ${r.ss} » invalide (01 à 99)`);
   else if (Object.keys(ARPENTEURS).length && !ARPENTEURS[r.ss]) r.erreurs.push(`code arpenteur ${r.ss} absent de la liste`);
   else if (Object.keys(ARP_HIST).length && !arpenteurA(r.ss, r.date)) r.erreurs.push(`code arpenteur ${r.ss} non attribué à la date du levé (${r.date})`);
-  if (!contratParSect(r.sect)) r.erreurs.push(`secteur ${r.sect} n'appartient à aucun contrat actif`);
+  if (!contratParSect(r.sect)){
+    const a = ancienSect(r.sect);
+    if (a){ r.ancien = {ancien: a.ancien, nouveau: a.nouveau, contrat: a.c.nom}; r.erreurs.push(`ancien secteur ${a.ancien}, remplacé par ${a.nouveau} (${a.c.nom}) : nom corrigé proposé`); }
+    else r.erreurs.push(`secteur ${r.sect} n'appartient à aucun contrat actif`);
+  }
   r.ok = r.erreurs.length === 0;
   return r;
 }
@@ -423,6 +433,9 @@ const secteursDe = c => [...new Set([...(c.info?.mode_secteur === "wbs" ? [] : [
 const wbsSecteur = (c, code) => { const x = (c.info?.secteurs || []).find(y => String(y.code || y).toUpperCase() === code); return x && x.wbs || ""; };
 const descSecteur = (c, code) => { const x = (c.info?.secteurs || []).find(y => String(y.code || y).toUpperCase() === code); return x && x.description || ""; };
 const contratParSect = sect => contrats.find(c => secteursDe(c).includes(String(sect).toUpperCase()));
+// Ancien secteur déclaré sur un contrat : {c, ancien, nouveau}
+const ancienSect = sect => { const s = String(sect).toUpperCase(); for (const c of contrats) for (const a of (c.info?.anciens_secteurs || [])) if (a.ancien === s) return {c, ancien: s, nouveau: a.nouveau}; return null; };
+const remplacerSect = (nom16, nouveau) => nom16.slice(0, 6) + nouveau + nom16.slice(10, 16);
 
 /* ===== Persistance du dossier choisi (IndexedDB) ===== */
 const idb = {
@@ -485,7 +498,10 @@ async function loadReference(){
   } catch(e){ showMsg("Le fichier _SYSTEME/reference.json est illisible : la liste par défaut est utilisée."); }
   const sel = $("#deposant"), cur = localStorage.getItem("an.deposant") || "";
   sel.innerHTML = `<option value="">— choisir —</option>` + Object.entries(ARPENTEURS).filter(([ss]) => !ACTIFS || ACTIFS.has(ss)).map(([ss,n]) => `<option value="${esc(n)}" ${n===cur?"selected":""}>${ss} – ${esc(n)}</option>`).join("") + `<option value="Bureau">Bureau</option>`;
-  if (cur && !sel.value){ sel.insertAdjacentHTML("beforeend", `<option selected>${esc(cur)}</option>`); }
+  if (cur && !sel.value){   // nom mémorisé qui n'est plus un titulaire actif (ancienne orthographe, code réattribué) : on l'oublie
+    try { localStorage.removeItem("an.deposant"); } catch {}
+    showMsg(`« ${esc(cur)} » n'est plus dans la liste des arpenteurs actifs du fichier de référence. Choisissez votre nom dans « Déposé par ».`, "warn");
+  }
 }
 
 
@@ -495,7 +511,7 @@ const FICHE_PATH = ["11_ADMIN", "SECTEURS_TERRAIN.html"];
 const b64url = u8 => { let s = ""; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
 function payloadContrat(c){
   const s = secteursDe(c).map(x => { const r = [x, descSecteur(c, x) || (x === sectDefaut(c.numero) ? "Numéro de contrat (secteur par défaut)" : "")], w = wbsSecteur(c, x); return w ? [...r, w] : r; });
-  return {v:1, c:c.numero, n:c.nom, m:c.info?.mode_secteur === "wbs" ? "wbs" : "contrat", d:(c.info?.secteurs_maj || c.info?.active_le || nowIso()).slice(0, 10), s};
+  return {v:1, c:c.numero, n:c.nom, m:c.info?.mode_secteur === "wbs" ? "wbs" : "contrat", d:(c.info?.secteurs_maj || c.info?.active_le || nowIso()).slice(0, 10), s, ...((c.info?.anciens_secteurs || []).length ? {a: c.info.anciens_secteurs.map(x => [x.ancien, x.nouveau])} : {})};
 }
 async function lienTerrain(c){
   const json = new TextEncoder().encode(JSON.stringify(payloadContrat(c)));
@@ -519,6 +535,7 @@ async function ecrireFiche(c, url, qr){
 table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border-bottom:1px solid #d9e0dc;padding:6px 8px;text-align:left;vertical-align:top}th{background:#eef1ef;font-size:.85rem}
 code{font:600 .95rem ui-monospace,Consolas,monospace}.qr svg{width:260px;height:260px}.box{background:#eef6f5;border-radius:10px;padding:12px 14px;margin-top:14px}.url{font:11px ui-monospace,monospace;word-break:break-all;color:#4b5853}a.btn{display:inline-block;background:#0b6e69;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600}</style></head><body>
 <div class="ttl"><img src="${AN_LOGO}" alt="Arpent-Nord construction"><div><h1>Secteurs de travail – ${esc(c.numero)}</h1><div class="m">${esc(c.nom)}</div></div></div>
+${p.a ? `<p style="background:#fff4e0;border-radius:8px;padding:8px 12px"><b>Anciens secteurs, à ne plus utiliser</b> : ${p.a.map(([o, n]) => `<code>${esc(o)}</code> → <code>${esc(n)}</code>`).join(" · ")}</p>` : ""}
 <p><b>À jour au ${esc(dateFr(p.d))}</b> · ${p.m === "wbs" ? "secteurs WBS du client" : "numéro de contrat et secteurs additionnels"} · ${p.s.length} secteur(s)</p>
 <table><tr><th>SECT</th><th>WBS du client</th><th>Description</th><th>Nom de levé (ex. aujourd'hui)</th></tr>${p.s.map(([k, d, w]) => `<tr><td><code>${esc(k)}</code></td><td>${esc(w || "")}</td><td>${esc(d)}</td><td><code>${ex}${esc(k)}#NATSS</code></td></tr>`).join("")}</table>
 <div class="box"><b>Sur le téléphone</b> : scannez le code ou touchez le bouton. Pcodes et Liaisons enregistre la liste et la remplace au complet à chaque nouvelle version.
@@ -613,6 +630,7 @@ async function chargerActivation(){
   document.querySelector(`input[name=aMode][value=${i.mode_secteur === "wbs" ? "wbs" : "contrat"}]`).checked = true;
   $("#aRows").innerHTML = ""; (i.secteurs || []).forEach(x => ajouterLigne(typeof x === "string" ? x : x.code, typeof x === "string" ? "" : x.description, typeof x === "string" ? "" : x.wbs || ""));
   $("#aPref").value = i.prefixe_wbs || "";
+  $("#aAnciens").innerHTML = ""; (i.anciens_secteurs || []).forEach(a => ajouterAncien(a.ancien, a.nouveau, a.note || ""));
   if (!$("#aRows").children.length) ajouterLigne();
   majMode();
   $("#aArbo").innerHTML = `<p class="small muted">Vérification de l'arborescence…</p>`;
@@ -633,6 +651,14 @@ function majMode(){
   $("#aAide").textContent = wbs
     ? "Chaque code SECT = préfixe du client ou du projet (1 ou 2 car.) + secteur, total 4 caractères, ex. CANP → fichier 261027CANP1PAV63. Inscrivez le WBS du client pour que l'arpenteur fasse le lien. Seuls les secteurs déclarés ici sont reconnus (NDA-001, 5.3)."
     : `Les fichiers portent le code du numéro de contrat, ex. AAMMJJ${c ? sectDefaut(c.numero) : "A000"}#NATSS. Ajoutez ici d'autres codes au besoin (WBS, chef-arpenteur).`;
+}
+function ajouterAncien(ancien = "", nouveau = "", note = ""){
+  const r = document.createElement("div"); r.className = "ancrow";
+  r.innerHTML = `<input class="ac" maxlength="4" placeholder="A008" aria-label="Ancien code"><span>→</span><input class="an" maxlength="4" placeholder="A005" aria-label="Nouveau code"><input class="ao" placeholder="Raison, ex. numéro de contrat changé le 2026-05-20" aria-label="Note"><button type="button" title="Retirer" aria-label="Retirer">✕</button>`;
+  r.querySelector(".ac").value = ancien; r.querySelector(".an").value = nouveau; r.querySelector(".ao").value = note;
+  r.querySelectorAll(".ac,.an").forEach(i => i.oninput = () => { i.value = i.value.toUpperCase().replace(/[^A-Z0-9]/g, ""); });
+  r.querySelector("button").onclick = () => r.remove();
+  $("#aAnciens").append(r);
 }
 function ajouterLigne(code = "", description = "", wbs = ""){
   const r = document.createElement("div"); r.className = "sectrow";
@@ -674,19 +700,32 @@ async function activer(){
   const c = contrats.find(x => x.nom === $("#aContrat").value); if (!c) return;
   const mode = document.querySelector("input[name=aMode]:checked").value;
   const {ok, erreurs} = lireSecteurs();
+  const anciens = [];
+  for (const r of $("#aAnciens").children){
+    const ancien = r.querySelector(".ac").value.trim(), nouveau = r.querySelector(".an").value.trim(), note = r.querySelector(".ao").value.trim();
+    if (!ancien && !nouveau) continue;
+    if (!/^[A-Z0-9]{4}$/.test(ancien) || !/^[A-Z0-9]{4}$/.test(nouveau)) erreurs.push(`Ancien secteur « ${ancien} → ${nouveau} » : 4 lettres ou chiffres de chaque côté`);
+    else anciens.push({ancien, nouveau, note});
+  }
   if (erreurs.length) return alert("Secteurs à corriger :\n\n" + erreurs.join("\n"));
   if (mode === "wbs" && !ok.length) return alert("Un contrat qui utilise des WBS doit avoir au moins un secteur de travail.");
   const prefixe = mode === "wbs" ? $("#aPref").value.trim().toUpperCase() : "";
   if (mode === "wbs" && !/^[A-Z0-9]{1,2}$/.test(prefixe)) return alert("Inscrivez le préfixe du client ou du projet : 1 ou 2 lettres ou chiffres (NDA-001, 5.3).");
   if (prefixe){ const meme = contrats.filter(o => o !== c && o.info?.mode_secteur === "wbs" && o.info?.prefixe_wbs === prefixe); if (meme.length && !confirm(`Le préfixe ${prefixe} est déjà utilisé par ${meme.map(o => o.nom).join(", ")}. C'est normal pour un même client; sinon, choisissez un autre préfixe. Continuer ?`)) return; }
   const visés = [...(mode === "wbs" ? [] : [sectDefaut(c.numero)]), ...ok.map(x => x.code)];
+  for (const a of anciens){
+    if (visés.includes(a.ancien)) return alert(`${a.ancien} est un secteur actuel du contrat : il ne peut pas être aussi un ancien secteur.`);
+    if (!visés.includes(a.nouveau)) return alert(`${a.nouveau} n'est pas un secteur de ce contrat (${visés.join(", ")}).`);
+    const autre = contrats.find(o => o !== c && (secteursDe(o).includes(a.ancien) || (o.info?.anciens_secteurs || []).some(x => x.ancien === a.ancien)));
+    if (autre) return alert(`${a.ancien} est déjà utilisé par ${autre.nom} : un levé ne pourrait pas être rattaché sans ambiguïté.`);
+  }
   for (const x of visés){ const autre = contrats.find(o => o !== c && secteursDe(o).includes(x)); if (autre) return alert(`Le secteur ${x} est déjà utilisé par ${autre.nom}. Chaque secteur doit appartenir à un seul contrat actif.`); }
   if (arboCourante?.manquants.length && !confirm(`L'arborescence de ${c.nom} est incomplète (${arboCourante.manquants.length} dossier(s) manquant(s)). Activer quand même ?`)) return;
   const avant = c.info?.active ? JSON.stringify([c.info.mode_secteur, secteursDe(c)]) : null;
   const apres = JSON.stringify([mode, [...new Set([...(mode === "wbs" ? [] : [sectDefaut(c.numero), c.info?.sect]), ...ok.map(x => x.code)].filter(Boolean))]]);
   const descAvant = JSON.stringify((c.info?.secteurs || []).map(x => [x.code, x.description || "", x.wbs || ""])), descApres = JSON.stringify(ok.map(x => [x.code, x.description || "", x.wbs || ""]));
-  const change = avant !== apres || descAvant !== descApres;
-  await ecrireInfo(c.dir, c.numero, c.nom, {mode_secteur: mode, prefixe_wbs: prefixe, secteurs: ok, secteurs_maj: change || !c.info?.secteurs_maj ? nowIso() : c.info.secteurs_maj, arborescence: {verifiee_le: nowIso(), manquants: arboCourante?.manquants || [], herites: arboCourante?.herites || []}});
+  const change = avant !== apres || descAvant !== descApres || JSON.stringify((c.info?.anciens_secteurs || []).map(a => [a.ancien, a.nouveau])) !== JSON.stringify(anciens.map(a => [a.ancien, a.nouveau]));
+  await ecrireInfo(c.dir, c.numero, c.nom, {mode_secteur: mode, prefixe_wbs: prefixe, secteurs: ok, anciens_secteurs: anciens, secteurs_maj: change || !c.info?.secteurs_maj ? nowIso() : c.info.secteurs_maj, arborescence: {verifiee_le: nowIso(), manquants: arboCourante?.manquants || [], herites: arboCourante?.herites || []}});
   if ((await readText(c.dir, INDEX_PATH)) === null) await writeFile(c.dir, INDEX_PATH, csvBuild([]));
   log("#contratLog", `Activé : ${c.nom} – ${mode === "wbs" ? "WBS" : "numéro de contrat"} – secteurs ${visés.join(", ")}`);
   await appendJournal("Activation contrat", `${c.nom} – ${mode} – ${visés.join(", ")}`);
@@ -697,7 +736,7 @@ async function activer(){
 async function ecrireInfo(d, numero, nom, opts){
   const prev = await readText(d, INFO_PATH).then(t => t ? JSON.parse(t) : {}).catch(() => ({}));
   const info = {...prev, numero, dossier:nom, secteur_defaut: sectDefaut(numero), entite: numero.startsWith("MA") ? "MECATECH" : "ARPENT-NORD",
-    ...opts, active: true, active_le: nowIso(), active_par: localStorage.getItem("an.deposant") || ""};
+    ...opts, active: true, active_le: nowIso(), active_par: $("#deposant").value || ""};
   delete info.sect;
   await writeFile(d, INFO_PATH, JSON.stringify(info, null, 2));
 }
@@ -732,8 +771,9 @@ async function addDirectory(h){ addItems(await collectDir(h, h.name, "", [])); }
 let lots = [];
 function buildLots(){
   const prev = Object.fromEntries(lots.map(l => [l.key, l]));
-  const mk = (key, nom, leveNom, groupe) => { const pr = leveNom ? parseLeveFichier(leveNom) : null; const c = pr && contratParSect(pr.sect);
-    return {key, nom, groupe, leveNom, parse:pr, contrat: prev[key]?.contrat ?? (c ? c.nom : ""), remarque: prev[key]?.remarque ?? "", instrument: prev[key]?.instrument ?? "", corr: prev[key]?.corr ?? "", motif: prev[key]?.motif ?? ""}; };
+  const mk = (key, nom, leveNom, groupe) => { const pr = leveNom ? parseLeveFichier(leveNom) : null; const c = pr && (contratParSect(pr.sect) || (pr.ancien && contrats.find(x => x.nom === pr.ancien.contrat)));
+    const corrAuto = pr?.ancien && leveNom ? remplacerSect(leveKey(leveNom).toUpperCase(), pr.ancien.nouveau) : "";
+    return {key, nom, groupe, leveNom, parse:pr, contrat: prev[key]?.contrat ?? (c ? c.nom : ""), remarque: prev[key]?.remarque ?? "", instrument: prev[key]?.instrument ?? "", corr: prev[key]?.corr ?? corrAuto, motif: prev[key]?.motif ?? ""}; };
   lots = [];
   // 1. Dossiers glissés : un dossier = un lot, nommé comme le dossier
   for (const g of [...new Set(pending.filter(p => p.groupe).map(p => p.groupe))]){
@@ -849,7 +889,7 @@ async function deposer(){
       }
       const leveFinal = l.leveNom ? (corrige ? l.corr + ext(l.leveNom) : l.leveNom) : null;
       const meta = {lot:nomLot, contrat:l.contrat, leve: leveFinal, nom_terrain: corrige ? l.leveNom : null, motif: (!corrige && l.parse && !l.parse.ok) ? l.motif.trim() : "", fichiers: ms.map(p => nouveauNom(p)),
-        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Conforme" : corrige ? `Conforme – nom corrigé au dépôt (terrain : ${l.leveNom})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
+        depose_par: qui, date_depot: nowIso(), remarque: l.remarque, instrument: l.instrument || "", validation: l.parse ? (l.parse.ok ? "Conforme" : corrige ? `Conforme – nom corrigé au dépôt (terrain : ${l.leveNom}${l.parse.ancien ? `; ancien secteur ${l.parse.ancien.ancien} → ${l.parse.ancien.nouveau}` : ""})` : l.parse.erreurs.join(" | ")) : "Documents sans levé"};
       await writeFile(d, ["_lot.json"], JSON.stringify(meta, null, 2));
       log("#depotLog", `Déposé : ${nomLot}${corrige ? ` (renommé, terrain : ${l.leveNom})` : ""} – ${ms.length} fichier(s)${l.contrat ? " → " + l.contrat : ""}`);
       await appendJournal("Dépôt", `${l.nom} – ${ms.length} fichier(s) – ${l.contrat || "contrat à choisir"}`);
@@ -874,14 +914,14 @@ async function scanBoite(){
       const fichiers = [], sousDossiers = []; for await (const [n, x] of h.entries()){ if (x.kind === "file" && n !== "_lot.json") fichiers.push(n); else if (x.kind === "directory") sousDossiers.push(n); }
       const leve = meta?.leve || choisirLeve(fichiers, name) || null;
       const pr = leve ? parseLeveFichier(leve) : null;
-      let contrat = meta?.contrat || (pr && contratParSect(pr.sect)?.nom) || "";
+      let contrat = meta?.contrat || (pr && (contratParSect(pr.sect)?.nom || pr.ancien?.contrat)) || "";
       let date = meta?.date_depot; if (!date){ try { const f = leve ? await (await h.getFileHandle(leve)).getFile() : null; date = f ? new Date(f.lastModified).toISOString().replace("T"," ").slice(0,19) : ""; } catch { date = ""; } }
       boite.push({nom:name, handle:h, dossier:true, meta, fichiers, sousDossiers, leve, parse:pr, contrat, date});
     } else {
       // fichier déposé directement dans la boîte (sans passer par la page)
       const pr = EXT_LEVE.includes(ext(name)) ? parseLeveFichier(name) : null;
       const f = await h.getFile();
-      boite.push({nom:name, handle:h, dossier:false, meta:null, fichiers:[name], leve: pr ? name : null, parse:pr, contrat: pr && contratParSect(pr.sect)?.nom || "", date: new Date(f.lastModified).toISOString().replace("T"," ").slice(0,19)});
+      boite.push({nom:name, handle:h, dossier:false, meta:null, fichiers:[name], leve: pr ? name : null, parse:pr, contrat: pr && (contratParSect(pr.sect)?.nom || pr.ancien?.contrat) || "", date: new Date(f.lastModified).toISOString().replace("T"," ").slice(0,19)});
     }
   }
   boite.sort((a,b) => (b.date||"").localeCompare(a.date||""));
@@ -912,7 +952,7 @@ function renderBoite(){
         ${l.parse && !l.parse.ok ? `<ul class="err">${l.parse.erreurs.map(e => `<li>${esc(e)}</li>`).join("")}</ul>` : ""}
         ${l.parse && !l.parse.ok && l.leve ? `<div class="corr" data-corrbox="${esc(l.nom)}" hidden>
           <div class="row" style="align-items:flex-end">
-            <div class="field"><label>Nom corrigé</label><input data-bcorr="${esc(l.nom)}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
+            <div class="field"><label>Nom corrigé</label><input data-bcorr="${esc(l.nom)}" value="${l.parse?.ancien && l.leve ? esc(remplacerSect(leveKey(l.leve).toUpperCase(), l.parse.ancien.nouveau)) : ""}" maxlength="16" size="20" placeholder="AAMMJJSECT#NATSS" style="font-family:ui-monospace,Consolas,monospace;text-transform:uppercase;letter-spacing:.04em"></div>
             <button class="btn small go" data-bapp="${esc(l.nom)}" disabled>Appliquer</button>
           </div>
           <p class="small" style="margin:4px 0 0" data-bmsg="${esc(l.nom)}"><span class="muted">Terrain : ${esc(l.leve)}. Seul le fichier d'exportation sera renommé.</span></p>
@@ -925,6 +965,7 @@ function renderBoite(){
   }).join("");
   box.querySelectorAll("[data-bc]").forEach(s => s.onchange = () => { const l = boite.find(x => x.nom === s.dataset.bc); l.contrat = s.value; renderBoite(); });
   box.querySelectorAll("[data-bcor]").forEach(b => b.onclick = () => { const cb = box.querySelector(`[data-corrbox="${CSS.escape(b.dataset.bcor)}"]`); cb.hidden = !cb.hidden; if (!cb.hidden) cb.querySelector("input").focus(); });
+  setTimeout(() => box.querySelectorAll("[data-bcorr]").forEach(i => { if (i.value) i.dispatchEvent(new Event("input")); }));
   box.querySelectorAll("[data-bcorr]").forEach(i => i.oninput = () => {
     i.value = i.value.toUpperCase().replace(/[^A-Z0-9]/g, "");
     const l = {corr: i.value}; const ok = corrValide(l);
@@ -1084,6 +1125,7 @@ async function revalider(){
     if (r.Statut !== "À vérifier" || !r.NomFichier || r.NomFichier === "(documents)") continue;
     const pr = parseLeveFichier(r.NomFichier);
     if (pr.ok){ r.Statut = "À traiter"; r.Validation = `${r.Validation} | Revalidé le ${nowIso().slice(0,10)} : conforme`; devenus++; }
+    else if (pr.ancien && pr.erreurs.length === 1 && pr.ancien.contrat === idxContrat.nom){ r.Statut = "À traiter"; r.Secteur = pr.ancien.nouveau; r.Validation = `${r.Validation} | Revalidé le ${nowIso().slice(0,10)} : ancien secteur ${pr.ancien.ancien} → ${pr.ancien.nouveau} (nom d'origine conservé)`; devenus++; }
     else toujours++;
   }
   if (devenus){ idxDirty = true; await saveIndex(); await appendJournal("Revalidation index", `${idxContrat.nom} – ${devenus} ligne(s) devenue(s) conforme(s)`); }
@@ -1253,6 +1295,7 @@ $("#btnBilan").onclick = lancerBilan;
 $("#aContrat").onchange = chargerActivation;
 document.querySelectorAll("input[name=aMode]").forEach(r => r.onchange = majMode);
 $("#btnActiver").onclick = activer;
+$("#btnAjAncien").onclick = () => ajouterAncien();
 $("#btnAjSect").onclick = () => ajouterLigne();
 $("#btnColler").onclick = () => { $("#aCollerBox").hidden = !$("#aCollerBox").hidden; if (!$("#aCollerBox").hidden) $("#aColler").focus(); };
 $("#btnImporter").onclick = () => { const n = importerListe($("#aColler").value); $("#aColler").value = ""; $("#aCollerBox").hidden = true; log("#contratLog", `${n} secteur(s) ajouté(s) à la liste. Vérifiez-les, puis cliquez sur Activer le contrat.`); };
