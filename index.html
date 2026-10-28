@@ -75,6 +75,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   .tool .when,.tool>p:not(.when){font-size:.88rem}
   .tool .when{display:none}
   .tool.desk{opacity:.8}
+  .tool.desk .when{display:block}
   .grid{gap:10px}
 }
 </style>
@@ -96,9 +97,10 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     <h2 id="chooseTitle">Quel outil prendre ?</h2>
     <ul>
       <li><b>Je cherche un code (Pcode), un code de liaison ou une commande de calcul au terrain</b> <span>→</span> <a href="#t-pcodes">Pcodes et Liaisons</a></li>
+      <li><b>J'ai terminé un levé et je dépose mes fichiers (txt, photos, carnet, données brutes)</b> <span>→</span> <a href="#t-depot">Dépôt des levés</a></li>
       <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
       <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
-      <li><b>Je dépose mes fichiers de levé au bureau, ou je répartis ceux reçus</b> <span>→</span> <a href="#t-gestion">Gestion des levés</a></li>
+      <li><b>Je répartis, indexe et classe les levés reçus (calculateur)</b> <span>→</span> <a href="#t-gestion">Gestion des levés</a></li>
       <li><b>Je travaille sur un projet de voie ferrée</b> <span>→</span> <a href="/voie-ferree/">Outils voie ferrée</a></li>
     </ul>
   </section>
@@ -112,6 +114,15 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <div class="actions">
         <a class="btn go" href="/APP-PCodes/">Ouvrir l'outil</a>
         <a class="btn doc" href="https://github.com/Arpent-Nord/APP-PCodes#readme">Documentation</a>
+      </div>
+    </article>
+    <article class="tool desk" id="t-depot">
+      <span class="tag">Arpenteur · après le terrain</span>
+      <h2>Dépôt des levés <span class="bureau">ordinateur</span></h2>
+      <p>Dépose le levé du jour dans la boîte 01_TRAITEMENT : fichier .txt, _MODIF, photos, carnet et données brutes. Vérifie le nom du levé et aide à le corriger s'il n'est pas conforme.</p>
+      <p class="when"><b>Produit :</b> le lot déposé, prêt à être réparti par le calculateur. Ordinateur avec Chrome ou Edge.</p>
+      <div class="actions">
+        <a class="btn go" href="/gestion-leves/#depot-leves">Déposer mes levés</a>
       </div>
     </article>
     <article class="tool" id="t-leve">
@@ -137,9 +148,9 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     </article>
 
     <article class="tool desk" id="t-gestion">
-      <span class="tag">Contrats · prototype</span>
+      <span class="tag">Calculateur · prototype</span>
       <h2>Gestion des levés <span class="bureau">ordinateur</span></h2>
-      <p>Dépose les levés, photos et carnets dans la boîte 01_TRAITEMENT, les répartit dans le bon contrat et tient l'index des levés à jour.</p>
+      <p>Boîte de dépôt, répartition des levés dans le bon contrat, index des levés, activation des contrats et bilan. Comprend aussi l'onglet Déposer.</p>
       <p class="when"><b>Produit :</b> les fichiers classés dans 00_LEVES_A_TRAITER du contrat et une ligne « À traiter » à l'index. Ordinateur avec Chrome ou Edge.</p>
       <div class="actions">
         <a class="btn go" href="/gestion-leves/">Ouvrir l'outil</a>

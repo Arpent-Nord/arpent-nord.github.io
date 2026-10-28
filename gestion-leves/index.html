@@ -129,24 +129,44 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
 @media (max-width:600px){.mt-logo{height:40px}}
 @media (prefers-color-scheme:dark){.mt-logo{background:#fff;border-radius:6px;padding:2px 4px}}
 </style>
+<style id="progres-depot">
+.progres{border:1px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin:12px 0;display:grid;gap:6px}
+.progres[hidden]{display:none}
+.progres-l1{display:flex;align-items:center;gap:10px}
+.progres progress{width:100%;height:12px;accent-color:var(--accent)}
+.roue{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:roue .8s linear infinite;flex:none}
+@keyframes roue{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.roue{animation-duration:2.4s}}
+</style>
+<style id="mode-depot">/* Mode « Dépôt des levés » (lien #depot-leves) : l'arpenteur ne voit que l'onglet Déposer */
+body.mode-depot nav[role="tablist"],body.mode-depot [data-panel]:not([data-panel="depot"]),body.mode-depot #racineWrap{display:none!important}
+.lien-complet{display:none}body.mode-depot .lien-complet{display:inline}
+</style>
 </head>
 <body>
 <main>
 <header>
   <a class="an-retour" href="https://arpent-nord.github.io/" title="Retour à la boîte à outils">‹ Boîte à outils</a>
   <img class="an-logo" id="anLogo" alt="Arpent-Nord construction" width="57" height="46"><img class="mt-logo" id="mtLogo" alt="MECATECH Arpentage" width="78" height="46">
-  <h1>Gestion des levés</h1>
-  <p>Dépôt des levés, répartition par contrat et index. Les fichiers sont écrits directement dans votre dossier SharePoint synchronisé : rien ne passe par Internet.</p>
+  <h1 id="titrePage">Gestion des levés</h1>
+  <p id="sousTitre">Dépôt des levés, répartition par contrat et index. Les fichiers sont écrits directement dans votre dossier OneDrive synchronisé, puis OneDrive les envoie dans SharePoint. Aucune donnée ne passe par GitHub ni par un autre serveur.</p>
 </header>
 
-<div id="noSupport" class="msg bad" hidden>Cette page doit être ouverte dans <b>Chrome ou Edge sur un ordinateur</b> : c'est le seul moyen pour elle d'écrire dans vos dossiers.</div>
+<div id="noSupport" class="msg bad" hidden>
+  <p style="margin:0 0 8px"><b>Ouvrez cette page dans Chrome ou Edge, sur un ordinateur.</b> Ce navigateur-ci ne permet pas à la page d'écrire dans vos dossiers.</p>
+  <p style="margin:0 0 8px">Copiez le lien, puis collez-le dans Edge (déjà installé sur tous les ordinateurs Windows) ou dans Chrome. <button type="button" class="btn" id="btnCopierLien">Copier le lien</button> <span id="lienCopie" class="small"></span></p>
+  <details><summary>Pourquoi ?</summary>
+    <p style="margin:6px 0 0">La page dépose vos fichiers directement dans le dossier OneDrive de l'ordinateur, qui les synchronise ensuite avec SharePoint. Seuls Chrome et Edge, sur ordinateur, permettent à une page web d'écrire dans un dossier. Firefox, Safari et les téléphones ne le permettent pas.</p>
+    <p style="margin:6px 0 0">Vos données ne passent jamais par GitHub : GitHub ne fait qu'héberger la page elle-même.</p>
+  </details>
+</div>
 
 <section class="panel conn" aria-label="Dossier des contrats actifs">
   <span class="dot" id="connDot"></span>
   <span>Dossier des contrats actifs : <span class="path" id="connPath">aucun</span></span>
   <button class="btn go" id="btnPick">Choisir le dossier 01_ACTIFS</button>
   <button class="btn" id="btnReconnect" hidden>Reconnecter</button>
-  <span class="field" style="flex-basis:100%"><label for="racine" class="small">Chemin Windows de ce dossier (pour copier les chemins vers l'Explorateur, facultatif)</label>
+  <span class="field" id="racineWrap" style="flex-basis:100%"><label for="racine" class="small">Chemin Windows de ce dossier (pour copier les chemins vers l'Explorateur, facultatif)</label>
     <input id="racine" placeholder="D:\ARPENT-NORD\Projet Arpent-Nord - Documents\General\01_CONTRATS\99_EN RODAGE" style="width:100%"></span>
   <span class="hint" id="connHint">Choisissez le dossier <b>…\General\01_CONTRATS\01_ACTIFS</b> synchronisé par OneDrive. La boîte de dépôt « 01_TRAITEMENT » y sera créée si elle n'existe pas.</span>
 </section>
@@ -185,6 +205,12 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
     <div class="row" style="margin-top:14px" id="depotActions" hidden>
       <button class="btn go" id="btnDeposer">Déposer dans la boîte</button>
       <button class="btn" id="btnVider">Tout retirer</button>
+    </div>
+    <div id="depotProgres" class="progres" hidden aria-live="polite">
+      <div class="progres-l1"><span class="roue" aria-hidden="true"></span><b id="progTitre">Dépôt en cours…</b></div>
+      <progress id="progBarre" max="1" value="0"></progress>
+      <div id="progDetail" class="small"></div>
+      <div class="small muted">Ne fermez pas la page. La conversion d'une photo iPhone (HEIC) peut prendre quelques secondes.</div>
     </div>
     <div class="log" id="depotLog"></div>
   </div>
@@ -287,7 +313,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
   </div>
 </section>
 
-<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.21 (2026-10-27).</footer>
+<footer>Prototype – système de gestion des contrats Arpent-Nord. Version 0.24 (2026-10-28).<span class="lien-complet"> · <a href="./">Gestion des levés complète (calculateur)</a></span></footer>
 </main>
 
 <script>/* qrcode-generator 1.4.4 — (c) Kazuhiko Arase — licence MIT — https://github.com/kazuhikoarase/qrcode-generator */
@@ -308,7 +334,7 @@ const INFO_PATH = ["11_ADMIN", "CONTRAT_INFO.json"];
 const INDEX_PATH = ["01_LEVES", "INDEX_LEVES.csv"];
 const RE_CONTRAT = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})(?=$|[_ ])/i;
 const EXT_LEVE = [".txt", ".csv"];
-const EXT_PHOTO = [".jpg", ".jpeg", ".png", ".heic", ".bmp", ".tif", ".tiff"];
+const EXT_PHOTO = [".jpg", ".jpeg", ".png", ".heic", ".heif", ".bmp", ".tif", ".tiff"];
 const EXT_CARNET = [".pdf",".doc",".docx",".rtf"];
 // Données brutes : fichiers de travail pouvant contenir GNSS et conventionnel (question obligatoire) / fichiers GNSS seulement
 let BRUT_DEMANDER = [".dc",".job",".jxl",".xcf",".dbx",".mjf",".tsj",".rw5"];
@@ -886,8 +912,22 @@ async function deposer(){
   const manque = lots.filter(l => !l.contrat);
   if (manque.length && !confirm(`${manque.length} lot(s) sans contrat : ils resteront dans la boîte jusqu'à ce qu'un calculateur choisisse le contrat. Continuer ?`)) return;
   $("#btnDeposer").disabled = true;
-  const depot = await dir(root, [DEPOT], true);
+  // Progression : une étape par fichier copié et une par photo HEIC à convertir
+  const aConvertir = l => { const ms = membres(l); return ms.filter(p => isHeic(p.file.name) && !ms.some(q => q !== p && base(q.file.name).toUpperCase() === base(p.file.name).toUpperCase() && /\.jpe?g$/i.test(q.file.name))).length; };
+  const prog = {fait: 0, total: lots.reduce((n, l) => n + membres(l).length + aConvertir(l), 0), nHeic: lots.reduce((n, l) => n + aConvertir(l), 0), iHeic: 0};
+  const majProg = async (detail) => {
+    $("#progBarre").max = Math.max(prog.total, 1); $("#progBarre").value = prog.fait;
+    $("#progTitre").textContent = `Dépôt en cours… ${Math.round(100 * prog.fait / Math.max(prog.total, 1))} %`;
+    $("#progDetail").textContent = detail;
+    await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));   // laisse l'écran se rafraîchir avant une conversion
+  };
+  $("#depotProgres").hidden = false;
+  $("#depotProgres").scrollIntoView({block: "nearest", behavior: "smooth"});
+  $("#btnDeposer").textContent = "Dépôt en cours…";
+  await majProg(prog.nHeic ? `${prog.total - prog.nHeic} fichier(s) à copier, ${prog.nHeic} photo(s) HEIC à convertir en JPEG.` : `${prog.total} fichier(s) à copier.`);
   const faits = [];
+  try {
+  const depot = await dir(root, [DEPOT], true);
   for (const l of lots){
     try {
       const corrige = l.parse && !l.parse.ok && corrValide(l);
@@ -902,10 +942,14 @@ async function deposer(){
       for (const p of ms){
         const parts = nouveauNom(p).split("/");
         const sd = await dir(d, parts.slice(0,-1), true);
+        await majProg(`Lot ${l.nom} : copie de ${p.file.name}`);
         const w = await (await sd.getFileHandle(parts.at(-1), {create:true})).createWritable(); await w.write(p.file); await w.close();
+        prog.fait++;
         if (isHeic(p.file.name) && !ms.some(q => q !== p && base(q.file.name).toUpperCase() === base(p.file.name).toUpperCase() && /\.jpe?g$/i.test(q.file.name))){
-          try { const j = await heicVersJpeg(p.file); const nj = base(parts.at(-1)) + ".jpg"; const wj = await (await sd.getFileHandle(nj, {create:true})).createWritable(); await wj.write(j); await wj.close(); copiesJpeg.push([...parts.slice(0,-1), nj].join("/")); }
+          prog.iHeic++; await majProg(`Lot ${l.nom} : conversion de la photo ${prog.iHeic} sur ${prog.nHeic} (${p.file.name}) en JPEG…`);
+          try { const j = await heicVersJpeg(p.file); const nj = base(parts.at(-1)) + ".jpg"; const wj = await (await sd.getFileHandle(nj, {create:true})).createWritable(); await wj.write(j); await wj.close(); copiesJpeg.push([...parts.slice(0,-1), nj].join("/")); log("#depotLog", `${p.file.name} : copie JPEG créée (${nj}).`); }
           catch(e){ log("#depotLog", `${p.file.name} : copie JPEG impossible (${e.message}); l'original HEIC est déposé.`); }
+          prog.fait++;
         }
       }
       const leveFinal = l.leveNom ? (corrige ? l.corr + ext(l.leveNom) : l.leveNom) : null;
@@ -917,9 +961,14 @@ async function deposer(){
       faits.push(l.key);
     } catch(e){ log("#depotLog", `Échec pour ${l.nom} : ${e.message}`); }
   }
+  } finally {
+    $("#depotProgres").hidden = true;
+    $("#btnDeposer").textContent = "Déposer dans la boîte";
+    $("#btnDeposer").disabled = false;
+  }
+  log("#depotLog", `Dépôt terminé : ${faits.length} lot(s) sur ${lots.length}.`);
   pending = pending.filter(p => !faits.includes(p.lot));
   buildLots(); renderPending();
-  $("#btnDeposer").disabled = false;
   await scanBoite();
 }
 
@@ -1273,9 +1322,24 @@ async function classer(i){
 }
 
 /* ===== Accès : photos et chemins ===== */
-const HEIC_LIB = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js";
-function chargerScript(src){ return new Promise((ok, ko) => { if (document.querySelector(`script[src="${src}"]`) && window.heic2any) return ok(); const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => ko(new Error("bibliothèque HEIC inaccessible (connexion Internet ?)")); document.head.append(s); }); }
-async function heicVersJpeg(blob){ if (!window.heic2any) await chargerScript(HEIC_LIB); const out = await heic2any({blob, toType: "image/jpeg", quality: 0.85}); return Array.isArray(out) ? out[0] : out; }
+// Photos HEIC/HEIF (iPhone) : conversion en JPEG avec heic-to 1.5.2 (libheif récent, lit les photos des iPhone actuels).
+// La bibliothèque est hébergée avec la page (lib/heic-to-1.5.2.js); jsDelivr sert de repli.
+const HEIC_LIBS = ["lib/heic-to-1.5.2.js", "https://cdn.jsdelivr.net/npm/heic-to@1.5.2/dist/iife/heic-to.js"];
+let heicPret = null;
+function chargerScript(src){ return new Promise((ok, ko) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { s.remove(); ko(new Error(src)); }; document.head.append(s); }); }
+function chargerHeic(){
+  if (window.HeicTo) return Promise.resolve();
+  if (!heicPret) heicPret = (async () => {
+    for (const src of HEIC_LIBS){ try { await chargerScript(src); if (window.HeicTo) return; } catch(e){} }
+    heicPret = null; throw new Error("convertisseur HEIC introuvable (vérifiez le dossier lib de la page ou la connexion Internet)");
+  })();
+  return heicPret;
+}
+async function heicVersJpeg(blob){
+  await chargerHeic();
+  try { return await HeicTo({blob, type: "image/jpeg", quality: 0.85}); }
+  catch(e){ throw new Error("photo HEIC illisible : " + (e && e.message ? e.message : e)); }
+}
 const TYPES_MIME = {".txt": "text/plain;charset=utf-8", ".csv": "text/plain;charset=utf-8", ".pdf": "application/pdf", ".html": "text/html;charset=utf-8", ".htm": "text/html;charset=utf-8", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"};
 async function ouvrirFichier(r, nom, chemin){
   const w = window.open("", "_blank");   // ouvert tout de suite (sinon bloqué comme fenêtre surgissante)
@@ -1460,7 +1524,16 @@ window.addEventListener("beforeunload", e => { if (idxDirty || pending.length){ 
 
 // Garde-fou : cette page doit être publiée dans /gestion-leves/, pas à la racine du site
 if (!/gestion-leves/i.test(location.pathname) && location.protocol.startsWith("http")) showMsg("Attention : cette page est publiée à la racine du site et remplace l'accueil de la boîte à outils. Sur GitHub, elle doit se trouver dans le dossier « gestion-leves ».");
+// Mode « Dépôt des levés » : page simplifiée pour l'arpenteur, ouverte depuis l'accueil de la boîte à outils
+if (location.hash === "#depot-leves"){
+  document.body.classList.add("mode-depot");
+  document.title = "Dépôt des levés – Arpent-Nord";
+  $("#titrePage").textContent = "Dépôt des levés";
+  $("#sousTitre").textContent = "Déposez ici votre levé terminé : fichier .txt, _MODIF, photos, carnet et données brutes. Les fichiers sont écrits directement dans votre dossier OneDrive synchronisé, puis OneDrive les envoie dans SharePoint. Aucune donnée ne passe par GitHub ni par un autre serveur.";
+}
+window.addEventListener("hashchange", () => location.reload());
 if (location.hash){ const b = document.querySelector(`nav button[data-tab="${location.hash.slice(1)}"]`); if (b) setTimeout(() => b.click(), 0); }
+$("#btnCopierLien").onclick = async () => { try { await navigator.clipboard.writeText(location.href); $("#lienCopie").textContent = "Lien copié."; } catch(e){ $("#lienCopie").textContent = location.href; } };
 if (!("showDirectoryPicker" in window)){ $("#noSupport").hidden = false; $("#btnPick").disabled = true; }
 else tryRestore();
 </script>
