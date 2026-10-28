@@ -100,6 +100,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <li><b>J'ai terminé un levé et je dépose mes fichiers (txt, photos, carnet, données brutes)</b> <span>→</span> <a href="#t-depot">Dépôt des levés</a></li>
       <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
       <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
+      <li><b>Je dois bâtir ou importer un axe de route (plan, profil) pour l'implanter</b> <span>→</span> <a href="#t-route">Projet routier</a></li>
     </ul>
   </section>
 
@@ -142,6 +143,16 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <div class="actions">
         <a class="btn go" href="/controle-implantation-app/">Ouvrir l'outil</a>
         <a class="btn doc" href="/controle-implantation-app/guide.html">Documentation</a>
+      </div>
+    </article>
+
+    <article class="tool" id="t-route">
+      <span class="tag">Route · version 1</span>
+      <h2>Projet routier</h2>
+      <p>Bâtit un axe de route par éléments ou par sommets (PI), comme dans Trimble Access, ou l'importe d'un LandXML Civil 3D, d'une route Trimble (.rxl) ou d'un DXF. Ajoute le profil en long et convertit les PM d'un plan chaîné à la corde.</p>
+      <p class="when"><b>Produit :</b> le rapport d'éléments, un tableau de piquetage CSV pour Trimble, un LandXML et le fichier projet_NOM.json.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Projet-Routier/">Ouvrir l'outil</a>
       </div>
     </article>
 
