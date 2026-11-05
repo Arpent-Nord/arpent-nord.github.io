@@ -101,6 +101,7 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <li><b>J'ai un levé terrain à vérifier ou à corriger avant de l'envoyer</b> <span>→</span> <a href="#t-leve">Validation de levé</a></li>
       <li><b>Je dois comparer des points implantés ou levés au plan (DXF)</b> <span>→</span> <a href="#t-impl">Contrôle d'implantation</a></li>
       <li><b>Je dois bâtir ou importer un axe de route (plan, profil) pour l'implanter</b> <span>→</span> <a href="#t-route">Projet routier</a></li>
+      <li><b>Je dois produire ou mettre à jour les fiches signalétiques des points de contrôle d'un contrat</b> <span>→</span> <a href="#t-fiches">Fiches signalétiques</a></li>
     </ul>
   </section>
 
@@ -164,6 +165,17 @@ footer{margin-top:22px;color:var(--muted);font-size:.85rem}
       <p class="when"><b>Produit :</b> les fichiers classés dans 00_LEVES_A_TRAITER du contrat et une ligne « À traiter » à l'index. Ordinateur avec Chrome ou Edge.</p>
       <div class="actions">
         <a class="btn go" href="/gestion-leves/">Ouvrir l'outil</a>
+      </div>
+    </article>
+
+    <article class="tool desk" id="t-fiches">
+      <span class="tag">Calculateur · chef arpenteur · version 0.3</span>
+      <h2>Fiches signalétiques <span class="bureau">ordinateur</span></h2>
+      <p>Réseau de points de contrôle d'un contrat : importe les coordonnées (CSV, PNEZD) et les photos (HEIC accepté), situe chaque point sur une carte et produit sa fiche : système, prisme, coordonnées, rattachement, photo.</p>
+      <p class="when"><b>Quand :</b> je crée ou je révise le réseau de stations et de cibles d'un contrat.</p>
+      <p class="when"><b>Produit :</b> un PDF par point et le projet .json, enregistrés dans le contrat (<span style="overflow-wrap:anywhere">02_IMPLANTATION\01_STATIONS\<wbr>FICHES_SIGNALETIQUES</span>). Ordinateur avec Chrome ou Edge.</p>
+      <div class="actions">
+        <a class="btn go" href="/APP-Fiches-Signaletiques/">Ouvrir l'outil</a>
       </div>
     </article>
   </div>
