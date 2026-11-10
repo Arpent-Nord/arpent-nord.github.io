@@ -23,8 +23,8 @@ Ce dépôt contient la page d'accueil et les modules du système de gestion des 
 | Outil | Ouvrir | Documentation |
 |---|---|---|
 | Pcodes et Liaisons | /APP-PCodes/ | github.com/Arpent-Nord/APP-PCodes |
-| Validation de levé | /validation-leve/ | /validation-leve/guide.html |
-| Contrôle d'implantation | /controle-implantation-app/ | /controle-implantation-app/guide.html |
+| Validation de levé | /APP-Validation-Leve/ | /APP-Validation-Leve/guide.html |
+| Contrôle d'implantation | /APP-Controle-Implantation/ | /APP-Controle-Implantation/guide.html |
 | GEDO REC – rapport de voie | /APP-Gedo-Rec/ | (voie ferrée) |
 | Vérification nez de quai | /APP-Verification-Nez-de-Quai/ | (voie ferrée) |
 
