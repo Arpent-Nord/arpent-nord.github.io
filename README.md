@@ -55,3 +55,4 @@ Ce dépôt contient la page d'accueil et les modules du système de gestion des 
 2. Copier une carte `<article class="tool">` dans `index.html` et changer le nom, la description et les liens.
 3. Ajouter une ligne dans « Quel outil prendre ? » et dans le tableau ci-dessus.
 4. Ajouter le bouton de retour et les logos, selon le standard des logos.
+
