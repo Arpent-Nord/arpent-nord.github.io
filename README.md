@@ -15,6 +15,8 @@ Ce dépôt contient la page d'accueil et les modules du système de gestion des 
 | `/gestion-leves/#depot-leves` | Dépôt des levés (arpenteur), présenté à part dans l'accueil |
 | `/gestion-leves/lib/` | Bibliothèque heic-to (conversion des photos iPhone) et sa licence |
 | `/admin/` | Administration des contrats : codes arpenteurs (depuis Monday), tables de référence |
+| `/admin/#reception` | Réception des documents (M-003) : dépôt des envois reçus, registre des documents, classement et révisions |
+| `/docs/M003_RECEPTION_DOCUMENTS.md` | Cahier du module M-003 (formats du registre et du manifeste) |
 | `/voie-ferree/` | Menu des outils spécialisés de voie ferrée |
 | `logo-*.svg`, `logo-*.png` | Logos originaux des deux entités (voir « Logos ») |
 

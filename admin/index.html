@@ -137,6 +137,48 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
 @media (max-width:600px){.mt-logo{height:28px}}
 @media (prefers-color-scheme:dark){.mt-logo{background:#fff;border-radius:6px;padding:3px 6px}}
 </style>
+<style id="m003-style">/* M-003 Réception des documents */
+.ent-btns{display:inline-flex;border:1.5px solid var(--accent);border-radius:8px;overflow:hidden}
+.ent{font:700 1.05rem/1 var(--f-display);letter-spacing:.04em;padding:10px 18px;border:0;background:var(--panel);color:var(--accent);cursor:pointer}
+.ent+.ent{border-left:1.5px solid var(--accent)}
+.ent[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.rec-chemin{margin-top:10px;padding:10px 12px;border-radius:8px;background:var(--bg);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rec-chemin code{font:600 .9rem/1.3 ui-monospace,Consolas,monospace;word-break:break-all}
+.rec-chemin .hint{flex-basis:100%;font-size:.88rem;color:var(--muted)}
+.subnav{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px;border-bottom:1px solid var(--line)}
+.subnav button{font:600 1rem/1 var(--f-display);background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:9px 12px;cursor:pointer;margin-bottom:-1px}
+.subnav button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.subnav .count{display:inline-block;min-width:1.6em;padding:2px 6px;margin-left:6px;border-radius:999px;background:var(--new-soft);color:var(--new);font:600 .8rem/1.2 var(--f-body)}
+.subnav .count:empty{display:none}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+.msg .btn{margin-left:8px}
+.rec-question{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:8px 0 0;display:grid;gap:4px}
+.rec-question legend{font-weight:600;font-size:.92rem;padding:0 4px}
+.rec-question label{font-weight:400}
+#recPending table td.fich{font-family:ui-monospace,Consolas,monospace;font-size:.82rem;white-space:normal;word-break:break-all;min-width:220px}
+#recTable td.fich{font-size:.84rem;white-space:normal;overflow-wrap:anywhere;min-width:240px;max-width:360px}
+#recTable td.wrap{min-width:140px;max-width:200px}
+#recPending tr.exclu td{color:var(--muted);text-decoration:line-through}
+#recPending tr.exclu td.ctl{text-decoration:none}
+#recPending tr.enfant td.fich{padding-left:22px}
+#recTable td.dest{font-family:ui-monospace,Consolas,monospace;font-size:.78rem;white-space:normal;overflow-wrap:anywhere;min-width:150px;max-width:220px;color:var(--muted)}
+#recTable td.act{white-space:nowrap}
+#recTable select,#recTable input,#recPending select{padding:3px 6px;font-size:.84rem}
+#recTable input.rv{width:56px}#recTable input.id{width:120px}
+#recTable tr.vc td{color:var(--muted)}
+.ico{border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;padding:2px 7px;cursor:pointer;font-size:.8rem;margin-right:3px}
+.ico:hover{color:var(--accent);border-color:var(--accent)}
+.ico.x:hover{color:var(--bad);border-color:var(--bad)}
+.rec-lot{border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.rec-lot .nom{font:700 1.05rem/1.2 var(--f-display);letter-spacing:.02em;flex:1;min-width:220px;word-break:break-all}
+.progres{border:1px solid var(--accent);background:var(--accent-soft);border-radius:8px;padding:10px 14px;margin:12px 0;display:grid;gap:6px}
+.progres[hidden]{display:none}
+.progres-l1{display:flex;align-items:center;gap:10px}
+.progres progress{width:100%;height:12px;accent-color:var(--accent)}
+.roue{width:18px;height:18px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--accent);animation:roue .8s linear infinite;flex:none}
+@keyframes roue{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.roue{animation-duration:2.4s}}
+</style>
 </head>
 <body>
 <main>
@@ -164,6 +206,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
   <button role="tab" data-tab="codes" aria-selected="false">Codes arpenteurs</button>
   <button role="tab" data-tab="tables" aria-selected="false">Tables de référence</button>
   <button role="tab" data-tab="creation" aria-selected="false">Contrat de test</button>
+  <button role="tab" data-tab="reception" aria-selected="false">Réception des documents<span class="count" id="cntRec" title="Documents à classer (contrat choisi)"></span></button>
 </nav>
 
 <!-- ACCUEIL -->
@@ -174,6 +217,7 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
     <div class="adm-card"><h3>Contrat de test (rodage)</h3><p>Créer dans 99_EN RODAGE un dossier de contrat nommé selon NDA-001 (NUMÉRO - CLIENT - SITE) avec l'arborescence complète, pour les essais.</p><button class="btn go" data-go="creation">Ouvrir</button></div>
     <div class="adm-card"><h3>Activation des contrats</h3><p>Valider l'arborescence d'un contrat créé par l'administration et déclarer ses secteurs (numéro de contrat ou WBS).</p><a class="btn go" href="/gestion-leves/#contrats">Ouvrir</a></div>
     <div class="adm-card"><h3>Bilan des contrats</h3><p>Vue d'ensemble, en lecture seule, de tous les dossiers de contrats : arborescence, levés en attente, index existants, conflits de secteur.</p><a class="btn go" href="/gestion-leves/#bilan">Ouvrir</a></div>
+    <div class="adm-card"><h3>Réception des documents (M-003)</h3><p>Recevoir les envois du client (courriels, plans PDF/DWG, zip, DMT), tenir le registre des documents reçus du contrat, classer selon NDA-001 et signaler les révisions.</p><button class="btn go" data-go="reception">Ouvrir</button></div>
     <div class="adm-card"><h3>Catalogue des répertoires</h3><p>Dossiers spécifiques aux projets (04_CLOUD à 11_TRACK…), leur utilisation et leur promotion dans la norme.</p><span class="state warn" style="align-self:flex-start">À venir</span></div>
   </div>
 </section>
@@ -237,9 +281,127 @@ td input[type=date]{padding:2px 4px;font-size:.84rem}
     <div class="field" style="margin-top:8px"><label for="spMA">MECATECH (contrats MA-…)</label><input id="spMA" style="width:100%" placeholder="https://mecatecharp.sharepoint.com/sites/…/01_CONTRATS"></div>
     <p class="small muted">Enregistré avec les tables ci-dessus (bouton « Enregistrer dans reference.json »).</p>
   </div>
+  <div class="panel">
+    <h2>Chemins des dossiers de contrats</h2>
+    <p class="small muted" style="margin-top:0">Chemin Windows imposé du dossier des contrats de chaque entité (dossier OneDrive synchronisé). La Réception des documents l'affiche sans permettre de le modifier, refuse un autre dossier et s'en sert pour « Copier le chemin complet ». Le dernier dossier du chemin (ex. 01_ACTIFS) doit être celui qu'on choisit dans le navigateur.</p>
+    <div class="field"><label for="chAN">ARPENT-NORD – contrats actifs</label><input id="chAN" style="width:100%" placeholder="D:\…\01_CONTRATS\01_ACTIFS"></div>
+    <div class="field" style="margin-top:8px"><label for="chMA">MECATECH – contrats actifs</label><input id="chMA" style="width:100%" placeholder="D:\…\01_CONTRATS\01_ACTIFS"></div>
+    <div class="field" style="margin-top:8px"><label for="chANR">ARPENT-NORD – rodage</label><input id="chANR" style="width:100%" placeholder="D:\…\99_EN RODAGE"></div>
+    <div class="field" style="margin-top:8px"><label for="chMAR">MECATECH – rodage</label><input id="chMAR" style="width:100%" placeholder="D:\…\99_EN RODAGE"></div>
+    <p class="small muted">Enregistré avec les tables ci-dessus (bouton « Enregistrer dans reference.json »).</p>
+  </div>
 </section>
 
-<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.8 (2026-10-28).</footer>
+<!-- RÉCEPTION DES DOCUMENTS (M-003) -->
+<section data-panel="reception" hidden>
+  <div class="panel">
+    <h2>Réception des documents <span class="small muted" style="font-weight:500">M-003 · v<span id="recVersion"></span></span></h2>
+    <p class="small muted" style="margin-top:0">Recevoir un envoi (courriel, plans PDF/DWG, zip, photos), l'inscrire au <b>registre des documents reçus</b> du contrat, puis le classer selon NDA-001. Les fichiers sont écrits directement dans le dossier OneDrive synchronisé; rien ne passe par GitHub. L'archivage (10_ARCHIVES) reste à M-005.</p>
+    <div class="row" style="align-items:center;margin-top:6px">
+      <div class="ent-btns" role="group" aria-label="Entité">
+        <button type="button" class="ent" data-ent="AN" aria-pressed="false">ARPENT-NORD</button>
+        <button type="button" class="ent" data-ent="MA" aria-pressed="false">MECATECH</button>
+      </div>
+      <label class="small" style="display:flex;gap:6px;align-items:center;font-weight:600"><input type="checkbox" id="recRodage"> Mode rodage (99_EN RODAGE)</label>
+    </div>
+    <div class="rec-chemin" id="recChemin"><span class="muted small">Choisissez l'entité : le chemin du dossier des contrats s'affiche et ne peut pas être modifié.</span></div>
+    <div class="row" style="margin-top:12px">
+      <div class="field" style="flex:2;min-width:260px"><label for="recContrat">Contrat</label><select id="recContrat" disabled><option value="">— choisissez d'abord l'entité —</option></select></div>
+      <div class="field" style="flex:1;min-width:180px"><label for="recUser">Votre nom (inscrit au registre)</label><input id="recUser" autocomplete="name" placeholder="Prénom Nom"></div>
+    </div>
+    <div id="recContratInfo" class="small muted" style="margin-top:6px"></div>
+  </div>
+
+  <div id="recMsg"></div>
+
+  <div class="subnav" role="tablist" aria-label="Réception">
+    <button type="button" role="tab" data-rtab="depot" aria-selected="true">Déposer un envoi</button>
+    <button type="button" role="tab" data-rtab="registre" aria-selected="false">Registre<span class="count" id="recCntClasser" title="Documents à classer"></span></button>
+    <button type="button" role="tab" data-rtab="lots" aria-selected="false">Lots de réception<span class="count" id="recCntLots" title="Dossiers à inscrire"></span></button>
+  </div>
+
+  <!-- Déposer -->
+  <div data-rec="depot">
+    <div class="panel">
+      <h3>1. Fichiers reçus</h3>
+      <div class="drop" id="recDrop" tabindex="0" role="button" aria-label="Ajouter des fichiers reçus" style="margin-top:8px">
+        <b>Glissez ici le courriel et les fichiers ou dossiers reçus</b>
+        <span class="muted small">Courriel .eml (pièces jointes extraites) ou .msg · PDF, DWG, DXF, zip, photos · ou cliquez pour choisir des fichiers</span>
+      </div>
+      <input type="file" id="recFiles" multiple hidden>
+      <div class="row" style="margin-top:8px;align-items:center">
+        <button type="button" class="btn small" id="recAjDossier">Ajouter un dossier…</button>
+        <label class="small" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="recSignature" checked> Ignorer les images intégrées aux courriels (logos de signature)</label>
+      </div>
+      <div id="recPending"></div>
+    </div>
+    <div class="panel">
+      <h3>2. Envoi (lot de réception)</h3>
+      <div class="row" style="margin-top:8px">
+        <div class="field"><label for="recDate">Date de réception</label><input type="date" id="recDate"></div>
+        <div class="field" style="flex:1;min-width:160px"><label for="recEmetteur">Émetteur</label><input id="recEmetteur" list="recEmetteurs" placeholder="ex. MTQ, HUDL, client"><datalist id="recEmetteurs"></datalist></div>
+        <div class="field" style="flex:2;min-width:220px"><label for="recObjet">Objet</label><input id="recObjet" placeholder="ex. Plans émis pour construction rév. 4"></div>
+      </div>
+      <div class="field" style="margin-top:8px"><label for="recRemarque">Remarque</label><textarea id="recRemarque" rows="2"></textarea></div>
+      <p class="small" id="recLotNom" style="margin:8px 0"></p>
+      <fieldset class="rec-question">
+        <legend>Statut au registre des courriels, photos et documents divers</legend>
+        <label><input type="radio" name="recAuLot" value="lot" checked> Ils restent dans le lot de réception : inscrits <b>Classé</b></label>
+        <label><input type="radio" name="recAuLot" value="classer"> Ils sont à examiner : inscrits <b>À classer</b></label>
+        <span class="small muted">Plans, DMT, fichiers d'implantation et réseaux de stations sont toujours inscrits « À classer ».</span>
+      </fieldset>
+      <div class="row" style="margin-top:12px">
+        <button type="button" class="btn go" id="recDeposer" disabled>Enregistrer la réception</button>
+        <button type="button" class="btn" id="recVider">Vider la liste</button>
+      </div>
+      <div class="progres" id="recProgres" hidden><div class="progres-l1"><span class="roue"></span><span id="recProgresTxt"></span></div><progress id="recProgresBar" max="1" value="0"></progress></div>
+      <div class="log" id="recLog"></div>
+    </div>
+  </div>
+
+  <!-- Registre -->
+  <div data-rec="registre" hidden>
+    <div class="panel">
+      <div class="row" style="align-items:flex-end">
+        <div class="field"><label for="recFStatut">Statut</label><select id="recFStatut"><option value="">Tous</option><option>À classer</option><option>Classé</option><option>Remplacé</option><option>Rejeté</option></select></div>
+        <div class="field"><label for="recFType">Type</label><select id="recFType"><option value="">Tous</option></select></div>
+        <div class="field"><label for="recFDisc">Discipline</label><select id="recFDisc"><option value="">Toutes</option></select></div>
+        <div class="field" style="flex:1;min-width:160px"><label for="recFTexte">Rechercher</label><input id="recFTexte" type="search" placeholder="fichier, émetteur, objet, identifiant…"></div>
+        <label class="small" style="display:flex;gap:6px;align-items:center;font-weight:600;padding-bottom:8px"><input type="checkbox" id="recFVigueur"> Plans en vigueur seulement</label>
+      </div>
+      <details class="legende" style="margin-top:12px"><summary class="small"><b>Lire le registre</b></summary>
+        <dl class="small" style="margin-top:8px">
+          <dt><span class="state new">À classer</span></dt><dd>Reçu, encore dans le lot de 08_PARTAGE\02_RECEPTION. Choisissez le type et la discipline, puis « Classer la sélection ».</dd>
+          <dt><span class="state ok">Classé</span></dt><dd>Copié à sa destination (ou gardé dans le lot). Le lot reste comme trace de réception.</dd>
+          <dt><span class="state warn">Remplacé</span></dt><dd>Une révision plus récente a été classée. Statut fichier VC : ne plus utiliser. Il n'est pas déplacé; l'archivage se fera par M-005.</dd>
+          <dt><span class="state bad">Rejeté</span></dt><dd>Lot rejeté (doublon, envoi erroné), avec motif au journal.</dd>
+          <dt>VV / VC</dt><dd>Statut du fichier selon NDA-001 : version valide / version à classer (retirée du flux actif).</dd>
+        </dl>
+      </details>
+      <div class="row" style="margin-top:12px;align-items:center">
+        <button type="button" class="btn go" id="recClasser" disabled>Classer la sélection</button>
+        <span class="small muted" id="recSelInfo"></span>
+        <span style="flex:1"></span>
+        <button type="button" class="btn small" id="recReindexer" title="Rajoute au registre les documents inscrits dans les manifestes des lots mais absents du registre">Réindexer depuis les lots</button>
+        <button type="button" class="btn small" id="recCopierRegistre">Copier le chemin du registre</button>
+        <button type="button" class="btn small" id="recRecharger">Recharger</button>
+      </div>
+      <div class="tablewrap" style="margin-top:10px"><table id="recTable"></table></div>
+      <p class="small muted" id="recRegPied"></p>
+      <div class="log" id="recRegLog"></div>
+    </div>
+  </div>
+
+  <!-- Lots -->
+  <div data-rec="lots" hidden>
+    <div class="panel">
+      <p class="small muted" style="margin-top:0">Dossiers de <code>08_PARTAGE\02_RECEPTION</code> du contrat. Un dossier sans manifeste (<code>_reception.json</code>) a été créé à la main : inscrivez-le pour l'ajouter au registre sans le recopier.</p>
+      <div id="recLots"></div>
+    </div>
+  </div>
+</section>
+
+<footer>Administration – système de gestion des contrats Arpent-Nord. Version 0.9 (2026-11-11) · Réception des documents M-003 v0.1.</footer>
 </main>
 
 <script>
@@ -290,6 +452,7 @@ async function useRoot(h){
   ref = await lireRef();
   $("#connHint").innerHTML = ref ? `Fichier de référence chargé : ${ref.arpenteurs?.length ?? 0} attribution(s) de codes, ${ref.nat?.length ?? 0} natures. Version ${esc(ref.version || "?")}.` : `<span style="color:var(--warn)">Aucun reference.json trouvé dans ${DEPOT}\\${SYS} : il sera créé.</span>`;
   $("#btnTables").disabled = false; chargerTables(); if (monday.length) analyser(); majCreation();
+  window.M003?.refCharge?.();
 }
 async function pick(){ try { const h = await showDirectoryPicker({id:"an-actifs", mode:"readwrite"}); await idb.set("root", h); await useRoot(h); } catch(e){ if (e.name !== "AbortError") showMsg(esc(e.message)); } }
 async function restaurer(){
@@ -443,6 +606,7 @@ function chargerTables(){
   $("#natRows").innerHTML = ""; (ref?.nat || []).forEach(n => ligneNat(n.code, n.description));
   $("#brDem").value = (ref?.brutes?.demander || [".dc",".job",".jxl",".xcf",".dbx",".mjf",".tsj",".rw5"]).join(", ");
   $("#spAN").value = ref?.sharepoint?.AN || ""; $("#spMA").value = ref?.sharepoint?.MA || "";
+  $("#chAN").value = ref?.chemins?.AN || ""; $("#chMA").value = ref?.chemins?.MA || ""; $("#chANR").value = ref?.chemins?.AN_RODAGE || ""; $("#chMAR").value = ref?.chemins?.MA_RODAGE || "";
   $("#brGnss").value = (ref?.brutes?.gnss || [".t01",".t02",".t04",".obs",".nav",".rnx",".ubx",".gnss",".tps",".jps",".sbf",".m00",".crx",".26o",".25o",".24o"]).join(", ");
 }
 async function enregistrerTables(){
@@ -450,16 +614,18 @@ async function enregistrerTables(){
   for (const r of $("#natRows").children){ const c = r.querySelector(".c").value, d = r.querySelector(".d").value.trim(); if (!c && !d) continue; if (!/^[A-Z]{3}$/.test(c)) err.push(`« ${c} » doit compter 3 lettres`); else if (nat.some(n => n.code === c)) err.push(`« ${c} » en double`); else nat.push({code:c, description:d}); }
   const sp = {AN: $("#spAN").value.trim().replace(/\/+$/, ""), MA: $("#spMA").value.trim().replace(/\/+$/, "")};
   for (const [k, v] of Object.entries(sp)) if (v && !/^https:\/\/[a-z0-9-]+\.sharepoint\.com\//i.test(v)) err.push(`Adresse ${k} : doit commencer par https://<locataire>.sharepoint.com/`);
+  const ch = {AN: $("#chAN").value, MA: $("#chMA").value, AN_RODAGE: $("#chANR").value, MA_RODAGE: $("#chMAR").value};
+  for (const k in ch){ ch[k] = ch[k].trim().replace(/^"|"$/g, "").replace(/\\+$/, ""); if (!ch[k]) delete ch[k]; else if (!/^([A-Z]:\\|\\\\)/i.test(ch[k])) err.push(`Chemin ${k} : chemin Windows complet attendu (ex. D:\\…)`); }
   if (err.length) return alert("À corriger :\n" + err.join("\n"));
   const ext = v => v.split(/[,;\s]+/).map(x => x.trim().toLowerCase()).filter(Boolean).map(x => x.startsWith(".") ? x : "." + x);
   const n = ref ? JSON.parse(JSON.stringify(ref)) : {arpenteurs: []};
-  n.nat = nat.sort((a, b) => a.code.localeCompare(b.code)); n.brutes = {...(n.brutes || {}), demander: ext($("#brDem").value), gnss: ext($("#brGnss").value)}; n.sharepoint = sp; n.version = auj();
-  if (!confirm(`Enregistrer ${nat.length} natures, les extensions et les adresses SharePoint dans reference.json ? L'ancienne version est archivée.`)) return;
-  try { await ecrireRef(n); ref = n; log("#tablesLog", `Tables enregistrées (${nat.length} natures).`); } catch(e){ log("#tablesLog", `Échec : ${e.message}`); }
+  n.nat = nat.sort((a, b) => a.code.localeCompare(b.code)); n.brutes = {...(n.brutes || {}), demander: ext($("#brDem").value), gnss: ext($("#brGnss").value)}; n.sharepoint = sp; n.chemins = ch; n.version = auj();
+  if (!confirm(`Enregistrer ${nat.length} natures, les extensions, les adresses SharePoint et les chemins des dossiers de contrats dans reference.json ? L'ancienne version est archivée.`)) return;
+  try { await ecrireRef(n); ref = n; window.M003?.refCharge?.(); log("#tablesLog", `Tables enregistrées (${nat.length} natures).`); } catch(e){ log("#tablesLog", `Échec : ${e.message}`); }
 }
 
 /* ===== Interface ===== */
-function ouvrir(tab){ if (tab === "creation") setTimeout(majCreation); document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab)); document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab); }
+function ouvrir(tab){ if (tab === "creation") setTimeout(majCreation); if (tab === "reception") setTimeout(() => window.M003?.ouvert()); document.querySelectorAll("nav button").forEach(x => x.setAttribute("aria-selected", x.dataset.tab === tab)); document.querySelectorAll("[data-panel]").forEach(p => p.hidden = p.dataset.panel !== tab); }
 document.querySelectorAll("nav button").forEach(b => b.onclick = () => ouvrir(b.dataset.tab));
 document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => ouvrir(b.dataset.go));
 
@@ -515,6 +681,824 @@ $("#btnGenerer").onclick = generer; $("#btnTelecharger").onclick = telecharger;
 $("#btnAjNat").onclick = () => ligneNat(); $("#btnTables").onclick = enregistrerTables;
 if (location.hash && document.querySelector(`[data-panel="${location.hash.slice(1)}"]`)) ouvrir(location.hash.slice(1));
 if (!("showDirectoryPicker" in window)){ $("#noSupport").hidden = false; $("#btnPick").disabled = true; } else restaurer();
+</script>
+<script id="m003">
+/* ===== M-003 Réception et classement des documents reçus =====
+   Cahier des charges M-003 v0.1 (2026-11-11). Référence normative : NDA-001 V03 (§5, §6.1, §6.7, §11, §17).
+   Aucune donnée privée dans ce code : chemins, noms et adresses sont lus dans reference.json et dans les dossiers du contrat. */
+(() => {
+"use strict";
+const VERSION = "0.1", VDATE = "2026-11-11";
+
+/* --- Choix provisoires (cahier §9) : à confirmer, puis à reporter dans NDA-001 --- */
+const RECEPTION = ["08_PARTAGE", "02_RECEPTION"];                   // boîte d'entrée documentaire (NDA §6.7)
+const REGISTRE  = ["08_PARTAGE", "REGISTRE_DOCUMENTS.csv"];          // Q2 : 08_PARTAGE (ou 11_ADMIN)
+const RETIRES   = ["08_PARTAGE", "REGISTRE_DOCUMENTS_RETIRES.csv"];
+const JOURNAL   = ["08_PARTAGE", "REGISTRE_DOCUMENTS_JOURNAL.csv"];
+const DMT_DEST  = null;            // Q1 : null = le DMT reste dans son lot; ex. ["08_PARTAGE","04_DMT"] une fois la norme modifiée
+const MANIFESTE = "_reception.json", REJET_TXT = "_REJETE.txt", SUPPORT = "_SUPPORT";
+const EXT_SUPPORT = [".shx",".ttf",".ttc",".otf",".ctb",".stb",".fmp",".pc3",".pmp",".lin",".pat",".bak",".dwl",".dwl2",".err",".sv$",".mnr",".mnl",".cuix"];
+const EXT_IMG = [".jpg",".jpeg",".png",".gif",".bmp",".tif",".tiff",".heic",".heif",".webp"];
+const EXT_3D = [".ifc",".rvt",".nwd",".nwc",".skp",".obj",".las",".laz",".e57",".rcp",".rcs",".stl",".fbx"];
+const EXT_PTS = [".csv",".txt",".pnezd",".xyz",".crd",".gsi",".job",".dc"];
+const IGNORER = ["thumbs.db",".ds_store","desktop.ini"];
+const DISC = [{c:"ARC", n:"Architecture", d:"01_ARCHITECTURE"}, {c:"STR", n:"Structure", d:"02_STRUCTURE"}, {c:"CIV", n:"Civil", d:"03_CIVIL"}, {c:"GEO", n:"Géomètre", d:"04_GEOMETRE"}, {c:"MEC", n:"Mécanique", d:"05_MECANIQUE"}];
+const discDe = c => DISC.find(x => x.c === c);
+// Types de documents et destination proposée (cahier §5). dest(discipline) -> parties de chemin; sans dest : reste dans le lot.
+const TYPES = [
+  {t:"Plan PDF", disc:true, dest:d => ["03_PLANS", discDe(d).d, "01_PDF"]},
+  {t:"Plan DWG/DXF", disc:true, dest:d => ["03_PLANS", discDe(d).d, "02_DWG"]},
+  {t:"DMT", aClasser:true, dest:DMT_DEST ? () => DMT_DEST : null},
+  {t:"Fichier d'implantation", dest:() => ["02_IMPLANTATION", "00_A_INTEGRER"]},
+  {t:"Réseau de stations", dest:() => ["02_IMPLANTATION", "01_STATIONS"]},
+  {t:"Courriel"}, {t:"Photo / image"}, {t:"Modèle 3D"}, {t:"Document divers"}, {t:"Fichier de soutien"}, {t:"Archive zip"}
+];
+const typeDe = t => TYPES.find(x => x.t === t) || TYPES.find(x => x.t === "Document divers");
+const aClasserParDefaut = t => !!(typeDe(t).dest || typeDe(t).aClasser);
+const REG_COLS = ["No","Statut","Statut_fichier","Date_Reception","Emetteur","Objet","Lot_Reception","Fichier","Taille","Type","Discipline","Identifiant","Revision","Cle","Remplace","Remplace_par","Destination","Recu_par","Date_Depot","Classe_par","Date_Classement","Remarques"];
+const RE_CONTRAT_DOC = /^(AN-\d{2}-\d{3}|MA-\d{2}-\d{3,4})(?=$|[_ ])/i;
+const IDB_CLE = k => `m003.${k}`;
+
+/* --- Utilitaires --- */
+const q = s => document.querySelector(s);
+const e_ = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const p2 = n => String(n).padStart(2, "0");
+const ajd = () => { const d = new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; };
+const maint = () => { const d = new Date(); return `${ajd()} ${p2(d.getHours())}:${p2(d.getMinutes())}:${p2(d.getSeconds())}`; };
+const ext = n => { const i = n.lastIndexOf("."); return i <= 0 ? "" : n.slice(i).toLowerCase(); };
+const base = n => { const i = n.lastIndexOf("."); return i <= 0 ? n : n.slice(0, i); };
+const nomDe = rel => rel.split("/").pop();
+const sansAccent = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const propre = (s, max = 40) => sansAccent(s).toUpperCase().replace(/[^A-Z0-9-]+/g, "_").replace(/^_+|_+$/g, "").slice(0, max).replace(/_+$/, "");
+const taille = o => o < 1024 ? `${o} o` : o < 1048576 ? `${(o/1024).toFixed(0)} ko` : `${(o/1048576).toFixed(1)} Mo`;
+const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const verrouille = e => /NoModificationAllowed|InvalidModification|InvalidState|being used|another process|verrou/i.test(`${e?.name} ${e?.message}`);
+function msg(html, kind = "ok", keep = false){
+  q("#recMsg").innerHTML = html ? `<div class="msg ${kind}">${html}</div>` : "";
+  clearTimeout(msg.t); if (html && kind === "ok" && !keep) msg.t = setTimeout(() => { q("#recMsg").innerHTML = ""; }, 7000);
+}
+function journalUi(id, t){ const d = q(id); d.textContent += `${maint().slice(11)}  ${t}\n`; d.scrollTop = d.scrollHeight; }
+
+/* --- Fichiers (File System Access) --- */
+async function dirH(parent, parts, create = false){ let d = parent; for (const p of parts) d = await d.getDirectoryHandle(p, {create}); return d; }
+async function fichierH(parent, parts){ return (await dirH(parent, parts.slice(0, -1))).getFileHandle(parts.at(-1)); }
+async function lireTexte(parent, parts){
+  try { return await (await (await fichierH(parent, parts)).getFile()).text(); }
+  catch(e){ if (e.name === "NotFoundError" || e.name === "TypeMismatchError") return null; throw e; }
+}
+async function ecrire(parent, parts, data){
+  const d = await dirH(parent, parts.slice(0, -1), true);
+  const w = await (await d.getFileHandle(parts.at(-1), {create:true})).createWritable();
+  try { await w.write(data); await w.close(); } catch(e){ try { await w.abort(); } catch {} throw e; }
+}
+async function existe(parent, parts){ try { await fichierH(parent, parts); return true; } catch { return false; } }
+async function inventaire(d, prefix = "", out = []){
+  for await (const [n, h] of d.entries()){
+    if (h.kind === "file"){ if (!IGNORER.includes(n.toLowerCase())) out.push({rel: prefix + n, h}); }
+    else await inventaire(h, prefix + n + "/", out);
+  }
+  return out;
+}
+
+/* --- CSV (séparateur ;, BOM, lisible dans Excel) --- */
+const cell = v => { v = String(v ?? ""); return /[;"\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+function csvLire(text){
+  text = text.replace(/^\uFEFF/, ""); const rows = []; let row = [], c = "", g = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (g){ if (ch === '"'){ if (text[i+1] === '"'){ c += '"'; i++; } else g = false; } else c += ch; }
+    else if (ch === '"') g = true; else if (ch === ";"){ row.push(c); c = ""; }
+    else if (ch === "\n"){ row.push(c.replace(/\r$/, "")); rows.push(row); row = []; c = ""; } else c += ch;
+  }
+  if (c !== "" || row.length){ row.push(c); rows.push(row); }
+  if (!rows.length) return [];
+  const h = rows[0];
+  return rows.slice(1).filter(r => r.some(x => x !== "")).map(r => Object.fromEntries(h.map((k, i) => [k, r[i] ?? ""])));
+}
+const csvEcrire = (rows, cols) => "\uFEFF" + cols.join(";") + "\r\n" + rows.map(r => cols.map(k => cell(r[k])).join(";")).join("\r\n") + (rows.length ? "\r\n" : "");
+
+/* --- État --- */
+const E = {cle:"", rodage:false, h:null, chemin:"", sp:""};   // entité choisie
+let C = null;                 // contrat : {nom, h}
+let REG = [];                 // registre affiché
+let regEnAttente = null;      // registre non écrit (fichier ouvert dans Excel) : {rows, apres}
+let pending = [], seq = 0;    // fichiers prêts à déposer
+let inscription = null;       // {lot, dir} : inscription d'un dossier existant (sans recopie)
+let aRetirerDeLaRacine = [];  // fichiers déposés hors lot à la racine de 02_RECEPTION (regroupés)
+const edits = {};             // modifications du registre avant classement, par No
+
+/* ===== Entité et chemin imposé (reference.json) ===== */
+function chemins(){
+  const r = (typeof ref !== "undefined" && ref && ref.chemins) || null;
+  if (r) { lsSet("m003.chemins", JSON.stringify(r)); return r; }
+  try { return JSON.parse(lsGet("m003.chemins") || "null") || {}; } catch { return {}; }
+}
+const cleEntite = () => E.cle ? E.cle + (E.rodage ? "_RODAGE" : "") : "";
+async function choisirEntite(cle){
+  E.cle = cle; E.rodage = q("#recRodage").checked; E.h = null; C = null; REG = []; majCompteurs();
+  document.querySelectorAll(".ent").forEach(b => b.setAttribute("aria-pressed", b.dataset.ent === cle));
+  lsSet("m003.entite", cle); lsSet("m003.rodage", E.rodage ? "1" : "");
+  E.chemin = (chemins()[cleEntite()] || "").replace(/\\+$/, "");
+  const sel = q("#recContrat"); sel.disabled = true; sel.innerHTML = `<option value="">—</option>`; q("#recContratInfo").textContent = "";
+  const box = q("#recChemin");
+  if (!E.chemin){
+    box.innerHTML = `<span class="dot"></span><span><b>${E.rodage ? "Rodage – " : ""}${cle === "AN" ? "ARPENT-NORD" : "MECATECH"}</b> : chemin non défini.</span>
+      <span class="hint" style="color:var(--warn)">Le chemin du dossier des contrats de cette entité n'est pas dans reference.json. Ouvrez <a href="#tables" data-goto="tables">Tables de référence</a>, inscrivez-le dans « Chemins des dossiers de contrats », puis enregistrez.${typeof root !== "undefined" && root ? "" : " (Choisissez d'abord le dossier des contrats en haut de la page.)"}</span>`;
+    box.querySelector("[data-goto]")?.addEventListener("click", ev => { ev.preventDefault(); ouvrir("tables"); });
+    return;
+  }
+  const h = await idb.get(IDB_CLE(cleEntite()));
+  if (h && await h.queryPermission({mode:"readwrite"}) === "granted") return brancher(h);
+  afficherChemin(h ? "autoriser" : "connecter", h);
+}
+function afficherChemin(etat, h){
+  const box = q("#recChemin");
+  const libEnt = `${E.rodage ? "Rodage – " : ""}${E.cle === "AN" ? "ARPENT-NORD" : "MECATECH"}`;
+  box.innerHTML = `<span class="dot ${etat === "ok" ? "on" : ""}"></span><span>${libEnt} :</span> <code title="Chemin imposé (reference.json), non modifiable">${e_(E.chemin)}</code>
+    <button type="button" class="ico" data-copier="${e_(E.chemin)}">Copier</button>
+    ${etat === "connecter" ? `<button type="button" class="btn go small" id="recConnecter">Connecter ce dossier</button>` : etat === "autoriser" ? `<button type="button" class="btn go small" id="recAutoriser">Autoriser l'accès</button>` : ""}
+    <span class="hint">${etat === "ok" ? `Connecté.${E.rodage ? ` <span style="color:var(--warn)">Mode rodage : rien n'est écrit dans les contrats actifs.</span>` : ""}`
+      : etat === "connecter" ? `Première utilisation sur cet ordinateur : cliquez « Connecter ce dossier » et choisissez exactement le dossier <b>${e_(E.chemin.split("\\").pop())}</b> ci-dessus. Le navigateur s'en souviendra.`
+      : "Le navigateur demande de renouveler l'autorisation d'écrire dans ce dossier."}</span>`;
+  box.querySelector("#recConnecter")?.addEventListener("click", connecter);
+  box.querySelector("#recAutoriser")?.addEventListener("click", async () => { if (await h.requestPermission({mode:"readwrite"}) === "granted") brancher(h); });
+}
+async function connecter(){
+  let h; try { h = await showDirectoryPicker({id:"m003-" + cleEntite(), mode:"readwrite"}); } catch(e){ if (e.name !== "AbortError") msg(e_(e.message), "bad"); return; }
+  const attendu = E.chemin.split("\\").pop();
+  if (h.name.toUpperCase() !== attendu.toUpperCase())
+    return msg(`Le dossier choisi s'appelle « ${e_(h.name)} ». Pour ${E.cle === "AN" ? "ARPENT-NORD" : "MECATECH"}${E.rodage ? " (rodage)" : ""}, il faut le dossier <b>${e_(E.chemin)}</b>. Rien n'a été enregistré.`, "bad", true);
+  await idb.set(IDB_CLE(cleEntite()), h); brancher(h);
+}
+async function brancher(h){
+  E.h = h; afficherChemin("ok"); msg("");
+  // Même fichier de référence que les autres outils (leçon 2) : on vérifie qu'il est cohérent
+  try {
+    const t = await lireTexte(h, ["01_TRAITEMENT", "_SYSTEME", "reference.json"]);
+    if (t){ const r2 = JSON.parse(t); const c2 = r2.chemins?.[cleEntite()];
+      E.sp = E.rodage ? "" : (r2.sharepoint?.[E.cle] || "");
+      if (c2 && c2.replace(/\\+$/, "").toUpperCase() !== E.chemin.toUpperCase()) msg(`Le reference.json de ce dossier indique un autre chemin pour cette entité (« ${e_(c2)} »). Harmonisez les fichiers de référence dans Tables de référence.`, "warn", true);
+      if (!(typeof ref !== "undefined" && ref?.chemins) && r2.chemins) lsSet("m003.chemins", JSON.stringify(r2.chemins));
+    }
+  } catch {}
+  const noms = [];
+  for await (const [n, x] of h.entries()) if (x.kind === "directory" && RE_CONTRAT_DOC.test(n)) noms.push(n);
+  noms.sort((a, b) => a.localeCompare(b, "fr"));
+  const sel = q("#recContrat"), dernier = lsGet("m003.contrat." + cleEntite());
+  sel.innerHTML = `<option value="">— choisir le contrat (${noms.length}) —</option>` + noms.map(n => `<option ${n === dernier ? "selected" : ""}>${e_(n)}</option>`).join("");
+  sel.disabled = false;
+  if (sel.value) choisirContrat(sel.value);
+}
+async function choisirContrat(nom){
+  C = null; REG = []; pending = []; inscription = null; aRetirerDeLaRacine = [];
+  for (const k in edits) delete edits[k];
+  rendrePending(); majCompteurs();
+  if (!nom){ q("#recContratInfo").textContent = ""; return; }
+  lsSet("m003.contrat." + cleEntite(), nom);
+  C = {nom, h: await E.h.getDirectoryHandle(nom)};
+  let manque = [];
+  for (const p of [["08_PARTAGE"], RECEPTION, ["03_PLANS"]]) { try { await dirH(C.h, p); } catch { manque.push(p.join("\\")); } }
+  q("#recContratInfo").innerHTML = `Dossier : <code>${e_(E.chemin)}\\${e_(nom)}</code> <button type="button" class="ico" data-copier="${e_(E.chemin + "\\" + nom)}">Copier</button>` +
+    (manque.length ? ` <span style="color:var(--warn)">· Dossier(s) absent(s) de l'arborescence : ${manque.map(e_).join(", ")} (${RECEPTION.join("\\")} sera créé au premier dépôt).</span>` : "");
+  await chargerRegistre(); await rendreLots();
+}
+
+/* ===== Registre ===== */
+async function lireRegistre(){ const t = await lireTexte(C.h, REGISTRE); return t ? csvLire(t) : []; }
+async function lireRetires(){ const t = await lireTexte(C.h, RETIRES); return t ? csvLire(t) : []; }
+async function ecrireRegistre(rows, apres = ""){
+  rows.sort((a, b) => a.No.localeCompare(b.No));
+  try { await ecrire(C.h, REGISTRE, csvEcrire(rows, REG_COLS)); regEnAttente = null; REG = rows; return true; }
+  catch(e){
+    regEnAttente = {rows, apres}; REG = rows;
+    if (verrouille(e)) msg(`Le registre <b>${REGISTRE.join("\\")}</b> est ouvert (probablement dans Excel). Fermez-le, puis cliquez « Réessayer ». Rien n'est perdu : les fichiers sont déjà écrits et le manifeste du lot contient les mêmes informations. <button type="button" class="btn small" id="recReessayer">Réessayer</button>`, "warn", true);
+    else msg(`Le registre n'a pas pu être écrit : ${e_(e.message)}. <button type="button" class="btn small" id="recReessayer">Réessayer</button>`, "bad", true);
+    q("#recReessayer")?.addEventListener("click", async () => { if (await ecrireRegistre(regEnAttente.rows, regEnAttente.apres)){ msg(`Registre enregistré.${apres ? " " + apres : ""}`); rendreRegistre(); } });
+    return false;
+  }
+}
+async function journal(action, details){
+  try {
+    const old = await lireTexte(C.h, JOURNAL);
+    const l = [maint(), q("#recUser").value.trim(), action, C.nom, details].map(cell).join(";");
+    await ecrire(C.h, JOURNAL, (old ?? "\uFEFFDate;Utilisateur;Action;Contrat;Details\r\n") + l + "\r\n");
+  } catch(e){ console.warn("Journal M-003", e); }
+}
+function prochainNo(...listes){
+  let m = 0; for (const l of listes) for (const r of l) { const n = parseInt(String(r.No || "").replace(/\D/g, ""), 10); if (n > m) m = n; }
+  return () => `D${String(++m).padStart(4, "0")}`;
+}
+async function chargerRegistre(){
+  if (!C) return;
+  try { REG = await lireRegistre(); } catch(e){ REG = []; msg(`Registre illisible : ${e_(e.message)}`, "bad", true); }
+  const em = [...new Set(REG.map(r => r.Emetteur).filter(Boolean))].sort();
+  q("#recEmetteurs").innerHTML = em.map(x => `<option value="${e_(x)}">`).join("");
+  rendreRegistre(); majCompteurs(); verifDoublons(); rendrePending();
+}
+function majCompteurs(){
+  const n = REG.filter(r => r.Statut === "À classer").length;
+  q("#recCntClasser").textContent = n || ""; const c = document.getElementById("cntRec"); if (c) c.textContent = n || "";
+}
+const cheminLot = r => [...RECEPTION, r.Lot_Reception, ...r.Fichier.split("/")];
+const valeur = (r, k) => (edits[r.No] && k in edits[r.No]) ? edits[r.No][k] : r[k];
+function destinationDe(r){
+  const t = typeDe(valeur(r, "Type")), d = valeur(r, "Discipline");
+  if (!t.dest) return {parts: [...RECEPTION, r.Lot_Reception], lot: true};
+  if (t.disc && !discDe(d)) return {parts: null, manque: "discipline"};
+  return {parts: t.dest(d)};
+}
+function filtrer(){
+  const st = q("#recFStatut").value, ty = q("#recFType").value, di = q("#recFDisc").value, tx = sansAccent(q("#recFTexte").value).toLowerCase(), vg = q("#recFVigueur").checked;
+  return REG.filter(r => (!st || r.Statut === st) && (!ty || r.Type === ty) && (!di || r.Discipline === di)
+    && (!vg || (r.Statut === "Classé" && r.Statut_fichier === "VV" && /^Plan/.test(r.Type)))
+    && (!tx || sansAccent([r.No, r.Fichier, r.Emetteur, r.Objet, r.Identifiant, r.Lot_Reception, r.Destination, r.Remarques].join(" ")).toLowerCase().includes(tx)));
+}
+const ETAT = {"À classer":"new", "Classé":"ok", "Remplacé":"warn", "Rejeté":"bad"};
+function rendreRegistre(){
+  const tb = q("#recTable");
+  if (!C){ tb.innerHTML = `<tr><td class="empty">Choisissez l'entité et le contrat.</td></tr>`; q("#recRegPied").textContent = ""; return; }
+  const rows = filtrer().sort((a, b) => (b.Date_Reception + b.No).localeCompare(a.Date_Reception + a.No));
+  const optT = cur => TYPES.map(t => `<option ${t.t === cur ? "selected" : ""}>${e_(t.t)}</option>`).join("");
+  const optD = cur => `<option value="">—</option>` + DISC.map(d => `<option value="${d.c}" ${d.c === cur ? "selected" : ""}>${d.c} – ${d.n}</option>`).join("");
+  tb.innerHTML = `<thead><tr><th><input type="checkbox" id="recTout" title="Tout sélectionner (à classer)"></th><th>No</th><th>Statut</th><th>Reçu le</th><th>Émetteur / objet</th><th>Fichier</th><th>Type</th><th>Disc.</th><th>Identifiant</th><th>Rév.</th><th>Destination</th><th></th></tr></thead><tbody>` +
+    (rows.length ? rows.map(r => {
+      const ac = r.Statut === "À classer", d = ac ? destinationDe(r) : null;
+      const dDos = (r.Destination || "").split("\\").slice(0, -1).join("\\"), dLot = dDos.startsWith(RECEPTION.join("\\"));
+      const dest = ac ? (d.parts ? (d.lot ? "reste dans le lot" : d.parts.join("\\")) : `<span style="color:var(--warn)">choisir la discipline</span>`) : (r.Statut === "Rejeté" ? "" : dLot ? "lot de réception" : e_(dDos));
+      const sousDos = r.Fichier.includes("/") ? r.Fichier.slice(0, r.Fichier.lastIndexOf("/")) : "";
+      return `<tr data-no="${e_(r.No)}" class="${r.Statut_fichier === "VC" || r.Statut === "Rejeté" ? "vc" : ""}">
+        <td>${ac ? `<input type="checkbox" class="sel">` : ""}</td><td>${e_(r.No)}</td>
+        <td><span class="state ${ETAT[r.Statut] || ""}">${e_(r.Statut)}</span>${r.Statut_fichier ? ` <span class="small muted" title="Statut fichier NDA-001">${e_(r.Statut_fichier)}</span>` : ""}</td>
+        <td>${e_(r.Date_Reception)}</td><td class="wrap"><b>${e_(r.Emetteur)}</b><br><span class="small muted">${e_(r.Objet)}</span></td>
+        <td class="fich" title="${e_(r.Lot_Reception + "/" + r.Fichier)}"><b>${e_(nomDe(r.Fichier))}</b>${sousDos ? `<br><span class="small muted">dans ${e_(sousDos)}</span>` : ""}${r.Remplace ? `<br><span class="small" style="color:var(--new)">remplace ${e_(r.Remplace)}</span>` : ""}${r.Remplace_par ? `<br><span class="small" style="color:var(--warn)">remplacé par ${e_(r.Remplace_par)}</span>` : ""}${r.Remarques ? `<br><span class="small muted">${e_(r.Remarques.split(" · ").filter(x => !/^(extrait de|pièce jointe de)/.test(x)).join(" · "))}</span>` : ""}</td>
+        ${ac ? `<td class="ed"><select data-k="Type">${optT(valeur(r, "Type"))}</select></td><td class="ed"><select data-k="Discipline">${optD(valeur(r, "Discipline"))}</select></td>
+              <td class="ed"><input class="id" data-k="Identifiant" value="${e_(valeur(r, "Identifiant"))}"></td><td class="ed"><input class="rv" data-k="Revision" value="${e_(valeur(r, "Revision"))}"></td>`
+           : `<td>${e_(r.Type)}</td><td>${e_(r.Discipline)}</td><td>${e_(r.Identifiant)}</td><td>${e_(r.Revision)}</td>`}
+        <td class="dest">${dest}</td>
+        <td class="act">${r.Statut !== "Rejeté" ? `<button type="button" class="ico" data-a="ouvrir" title="Ouvrir le fichier">Ouvrir</button><button type="button" class="ico" data-a="chemin" title="Copier le chemin complet (Explorateur, Civil 3D)">Chemin</button><button type="button" class="ico" data-a="dossier" title="${E.sp ? "Ouvrir le dossier dans SharePoint" : "Copier le chemin du dossier"}">Dossier</button>` : ""}<button type="button" class="ico x" data-a="retirer" title="Retirer la ligne du registre (avec motif)">✕</button></td></tr>`;
+    }).join("") : `<tr><td colspan="12" class="empty">${REG.length ? "Aucun document ne correspond aux filtres." : "Registre vide : aucun document reçu pour ce contrat."}</td></tr>`) + "</tbody>";
+  const n = s => REG.filter(r => r.Statut === s).length;
+  q("#recRegPied").textContent = `${REG.length} document(s) : ${n("À classer")} à classer, ${n("Classé")} classé(s), ${n("Remplacé")} remplacé(s), ${n("Rejeté")} rejeté(s). Registre : ${REGISTRE.join("\\")}.`;
+  majSelection();
+}
+function majSelection(){
+  const s = [...document.querySelectorAll("#recTable .sel:checked")].length;
+  q("#recClasser").disabled = !s; q("#recSelInfo").textContent = s ? `${s} document(s) sélectionné(s)` : "Cochez les documents à classer.";
+}
+
+/* --- Ouvrir, copier les chemins --- */
+const MIME = {".pdf":"application/pdf", ".png":"image/png", ".jpg":"image/jpeg", ".jpeg":"image/jpeg", ".gif":"image/gif", ".webp":"image/webp", ".txt":"text/plain;charset=utf-8", ".csv":"text/plain;charset=utf-8", ".json":"text/plain;charset=utf-8"};
+function partsFichier(r){ return (r.Statut === "À classer" || !r.Destination) ? cheminLot(r) : r.Destination.split("\\"); }
+async function ouvrirDoc(r){
+  const parts = partsFichier(r), m = MIME[ext(parts.at(-1))];
+  if (!m) return copier(complet(parts), `Ce type de fichier (${ext(parts.at(-1)) || "sans extension"}) s'ouvre dans son logiciel. Chemin copié : collez-le dans l'Explorateur ou dans le logiciel.`);
+  const w = window.open("", "_blank");
+  try { const f = await (await fichierH(C.h, parts)).getFile(); const u = URL.createObjectURL(new Blob([f], {type: m})); if (w) w.location = u; else window.open(u, "_blank"); setTimeout(() => URL.revokeObjectURL(u), 120000); }
+  catch { if (w) w.close(); msg(`Fichier introuvable : ${e_(parts.join("\\"))}. S'il a été déplacé ou renommé, retirez la ligne puis réindexez.`, "bad", true); }
+}
+const complet = parts => `${E.chemin}\\${C.nom}\\${parts.join("\\")}`;
+function copier(t, texte){ navigator.clipboard.writeText(t).then(() => msg(texte || `Copié : <code>${e_(t)}</code>`), () => prompt("Copiez ce chemin :", t)); }
+function ouvrirDossier(r){
+  const parts = partsFichier(r).slice(0, -1);
+  if (E.sp) window.open(E.sp + "/" + [E.h.name, C.nom, ...parts].map(encodeURIComponent).join("/"), "_blank");
+  else copier(complet(parts), `Chemin du dossier copié : <code>${e_(complet(parts))}</code> — collez-le dans la barre d'adresse de l'Explorateur.`);
+}
+
+/* --- Retirer une ligne (avec motif; toujours réversible par « Réindexer ») --- */
+async function retirer(no){
+  const rows = await lireRegistre(), i = rows.findIndex(r => r.No === no); if (i < 0) return chargerRegistre();
+  const r = rows[i];
+  const motif = prompt(`Retirer ${no} (${r.Fichier}) du registre ?\nLes fichiers ne sont pas touchés; la ligne est conservée dans ${RETIRES.at(-1)}.\n\nMotif (obligatoire) :`, "");
+  if (!motif?.trim()) return;
+  try { const anc = await lireRetires(); await ecrire(C.h, RETIRES, csvEcrire([...anc, {...r, Retire_par: q("#recUser").value.trim(), Retire_le: maint(), Motif_retrait: motif.trim()}], [...REG_COLS, "Retire_par", "Retire_le", "Motif_retrait"])); }
+  catch(e){ return msg(`Retrait annulé : ${verrouille(e) ? "le fichier des lignes retirées est ouvert dans Excel" : e_(e.message)}.`, "bad", true); }
+  rows.splice(i, 1);
+  for (const x of rows){ if (x.Remplace_par === no){ x.Remplace_par = ""; if (x.Statut === "Remplacé"){ x.Statut = "Classé"; x.Statut_fichier = "VV"; } } }
+  if (await ecrireRegistre(rows)) msg(`${no} retiré du registre. Pour le remettre : « Réindexer depuis les lots » ne réinscrit pas une ligne retirée; supprimez-la de ${RETIRES.at(-1)} au besoin.`);
+  await journal("Ligne retirée", `${no} – ${r.Fichier} – ${motif.trim()}`);
+  rendreRegistre(); majCompteurs();
+}
+
+/* ===== Classement ===== */
+function cmpRev(a, b){
+  a = String(a || "").trim().toUpperCase(); b = String(b || "").trim().toUpperCase();
+  if (!a || !b) return null;
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) return +a - +b;
+  if (/^[A-Z]$/.test(a) && /^[A-Z]$/.test(b)) return a.localeCompare(b);
+  return null;
+}
+async function classerSelection(){
+  const user = q("#recUser").value.trim(); if (!user) return msg("Inscrivez votre nom (en haut) avant de classer : il est noté au registre.", "bad", true);
+  const nos = [...document.querySelectorAll("#recTable .sel:checked")].map(x => x.closest("tr").dataset.no);
+  const rows = await lireRegistre();
+  const sel = rows.filter(r => nos.includes(r.No) && r.Statut === "À classer");
+  for (const r of sel) Object.assign(r, edits[r.No] || {});
+  const sansDisc = sel.filter(r => !destinationDe(r).parts);
+  if (sansDisc.length) return msg(`Choisissez la discipline de : ${sansDisc.map(r => e_(r.No + " " + nomDe(r.Fichier))).join(", ")}.`, "bad", true);
+  sel.sort((a, b) => (a.Cle || "").localeCompare(b.Cle || "") || (cmpRev(a.Revision, b.Revision) ?? 0));
+  const plan = [], lignes = [], conflits = [];
+  for (const r of sel){
+    const d = destinationDe(r), src = cheminLot(r);
+    if (!(await existe(C.h, src))){ conflits.push(`${r.No} : fichier absent du lot (${src.join("\\")})`); continue; }
+    if (d.lot){ plan.push({r, lot: true}); lignes.push(`• ${r.No} ${nomDe(r.Fichier)} : reste dans le lot`); continue; }
+    const dest = [...d.parts, nomDe(r.Fichier)], dossier = d.parts.join("\\");
+    let identique = false;
+    if (await existe(C.h, dest)){
+      const a = await (await fichierH(C.h, src)).getFile(), b = await (await fichierH(C.h, dest)).getFile();
+      if (a.size === b.size) identique = true;
+      else { conflits.push(`${r.No} : « ${nomDe(r.Fichier)} » existe déjà dans ${dossier} avec un contenu différent (rien n'est écrasé). Vérifiez s'il s'agit d'une autre révision, puis renommez ou retirez l'ancien à la main.`); continue; }
+    }
+    // Révision : même clé de document, même dossier de destination, encore en vigueur
+    const dossierDe = x => (x.Destination || "").split("\\").slice(0, -1).join("\\");
+    const prev = rows.filter(x => x !== r && x.Cle && x.Cle === r.Cle && x.Statut_fichier === "VV"
+      && ((x.Statut === "Classé" && dossierDe(x) === dossier) || plan.some(p => p.r === x && p.dossier === dossier && !p.perime)));
+    // fichiers déjà présents à la destination, non inscrits au registre, de même clé
+    const horsReg = [];
+    try { for await (const [n, h] of (await dirH(C.h, d.parts)).entries()) if (h.kind === "file" && n !== nomDe(r.Fichier) && detecter(n).cle === r.Cle && !rows.some(x => x.Destination === [...d.parts, n].join("\\"))) horsReg.push(n); } catch {}
+    let perime = false;
+    for (const p of prev){ const c = cmpRev(r.Revision, p.Revision); if (c !== null && c < 0) perime = true; }
+    if (perime && !confirm(`${r.No} « ${nomDe(r.Fichier)} » (rév. ${r.Revision}) est ANTÉRIEUR à la version en vigueur (${prev.map(p => `${p.No} rév. ${p.Revision}`).join(", ")}).\n\nOK : le classer quand même, comme version périmée (VC).\nAnnuler : ne pas le classer.`)) continue;
+    plan.push({r, dest, dossier, identique, prev: perime ? [] : prev, perime, horsReg});
+    lignes.push(`• ${r.No} ${nomDe(r.Fichier)} → ${dossier}${identique ? " (déjà présent, identique : pas de copie)" : ""}${perime ? " (version périmée : VC)" : ""}`
+      + prev.filter(() => !perime).map(p => `\n     remplace ${p.No} ${nomDe(p.Fichier)}${p.Revision ? ` rév. ${p.Revision}` : ""} du ${p.Date_Reception} → VC`).join("")
+      + (horsReg.length ? `\n     ⚠ même document déjà présent hors registre : ${horsReg.join(", ")} (à vérifier)` : ""));
+  }
+  if (!plan.length) return msg(conflits.length ? "Rien à classer :<br>" + conflits.map(e_).join("<br>") : "Rien à classer.", "bad", true);
+  if (!confirm(`Classer ${plan.length} document(s) ?\n\n${lignes.join("\n")}${conflits.length ? `\n\nNon classés :\n${conflits.join("\n")}` : ""}\n\nLes fichiers sont copiés; le lot de réception reste comme trace. Rien n'est déplacé vers 10_ARCHIVES (M-005).`)) return;
+  const fait = [];
+  for (const p of plan){
+    const r = p.r;
+    try {
+      if (!p.lot && !p.identique){ const f = await (await fichierH(C.h, cheminLot(r))).getFile(); await ecrire(C.h, p.dest, f); }
+      Object.assign(r, {Statut: "Classé", Statut_fichier: p.perime ? "VC" : "VV", Destination: p.lot ? cheminLot(r).join("\\") : p.dest.join("\\"), Classe_par: user, Date_Classement: maint()});
+      if (p.identique) r.Remarques = [r.Remarques, "déjà présent à la destination (identique), non recopié"].filter(Boolean).join(" · ");
+      if (p.horsReg?.length) r.Remarques = [r.Remarques, `même document hors registre à la destination : ${p.horsReg.join(", ")}`].filter(Boolean).join(" · ");
+      if (p.prev?.length){
+        r.Remplace = p.prev.map(x => `${x.No}${x.Revision ? ` (rév. ${x.Revision} du ${x.Date_Reception})` : ` (du ${x.Date_Reception})`}`).join(", ");
+        for (const x of p.prev){ x.Statut = "Remplacé"; x.Statut_fichier = "VC"; x.Remplace_par = r.No; }
+      }
+      delete edits[r.No]; fait.push(p);
+    } catch(e){ conflits.push(`${r.No} : copie impossible (${e.message})`); }
+  }
+  const rempl = fait.flatMap(p => (p.prev || []).map(x => `${p.r.No} remplace ${x.No}${x.Revision ? ` (rév. ${x.Revision} du ${x.Date_Reception})` : ""}`));
+  const resume = `${fait.length} document(s) classé(s).${rempl.length ? " " + rempl.join("; ") + " — l'ancienne version est marquée VC au registre, sans être déplacée." : ""}`;
+  const ok = await ecrireRegistre(rows, resume);
+  // trace dans les manifestes des lots
+  const parLot = {}; fait.forEach(p => (parLot[p.r.Lot_Reception] ??= []).push(p));
+  for (const [lot, ps] of Object.entries(parLot)){
+    try { const t = await lireTexte(C.h, [...RECEPTION, lot, MANIFESTE]); if (!t) continue; const m = JSON.parse(t);
+      for (const p of ps){ const d = (m.documents || []).find(x => x.no === p.r.No); if (d) Object.assign(d, {statut: "Classé", statut_fichier: p.r.Statut_fichier, destination: p.r.Destination, classe_par: user, classe_le: p.r.Date_Classement}); }
+      await ecrire(C.h, [...RECEPTION, lot, MANIFESTE], JSON.stringify(m, null, 2)); } catch {}
+  }
+  await journal("Classement", fait.map(p => `${p.r.No}→${p.lot ? "lot" : p.dossier}`).join(", ") + (rempl.length ? ` | ${rempl.join("; ")}` : ""));
+  journalUi("#recRegLog", resume + (conflits.length ? ` Non classés : ${conflits.join(" | ")}` : ""));
+  if (ok) msg(e_(resume) + (conflits.length ? `<br><span style="color:var(--warn)">Non classés : ${conflits.map(e_).join("<br>")}</span>` : ""), conflits.length ? "warn" : "ok", !!conflits.length);
+  rendreRegistre(); majCompteurs();
+}
+
+/* ===== Réindexer depuis les manifestes des lots ===== */
+async function listerLots(){
+  const out = {lots: [], hors: []};
+  let rec; try { rec = await dirH(C.h, RECEPTION); } catch { return out; }
+  for await (const [n, h] of rec.entries()){
+    if (h.kind === "file"){ if (!IGNORER.includes(n.toLowerCase())) out.hors.push({n, h}); continue; }
+    if (n.startsWith("_")) continue;
+    let m = null; try { const t = await lireTexte(h, [MANIFESTE]); m = t ? JSON.parse(t) : null; } catch { m = {illisible: true}; }
+    out.lots.push({n, h, m});
+  }
+  out.lots.sort((a, b) => b.n.localeCompare(a.n));
+  return out;
+}
+async function reindexer(){
+  if (!C) return;
+  const rows = await lireRegistre(), ret = await lireRetires(), connus = new Set([...rows, ...ret].map(r => r.No));
+  const {lots} = await listerLots(); let n = 0; const sans = lots.filter(l => !l.m).length;
+  for (const l of lots){
+    if (!l.m || l.m.illisible) continue;
+    for (const d of l.m.documents || []){
+      if (!d.no || connus.has(d.no)) continue;
+      rows.push(ligneDe(l.m, d)); connus.add(d.no); n++;
+    }
+  }
+  if (n) await ecrireRegistre(rows);
+  await journal("Réindexation", `${n} ligne(s) réinscrite(s) depuis les manifestes`);
+  msg(`${n} ligne(s) réinscrite(s) depuis les manifestes des lots.${sans ? ` ${sans} dossier(s) sans manifeste : voir « Lots de réception ».` : ""}`, n || !sans ? "ok" : "warn", !!sans);
+  await chargerRegistre(); await rendreLots();
+}
+function ligneDe(m, d){
+  return {No: d.no, Statut: m.statut === "Rejeté" ? "Rejeté" : (d.statut || "À classer"), Statut_fichier: m.statut === "Rejeté" ? "" : (d.statut_fichier || "VV"),
+    Date_Reception: m.date_reception, Emetteur: m.emetteur, Objet: m.objet, Lot_Reception: m.lot, Fichier: d.fichier, Taille: d.taille, Type: d.type, Discipline: d.discipline || "",
+    Identifiant: d.identifiant || "", Revision: d.revision || "", Cle: d.cle || "", Remplace: "", Remplace_par: "", Destination: d.destination || "",
+    Recu_par: m.depose_par, Date_Depot: m.depose_le, Classe_par: d.classe_par || "", Date_Classement: d.classe_le || "", Remarques: [d.origine && d.origine !== "déposé" ? d.origine : "", d.remarque || ""].filter(Boolean).join(" · ")};
+}
+
+/* ===== Lots de réception : rejeter, inscrire un dossier existant, regrouper les fichiers hors lot ===== */
+async function rendreLots(){
+  const box = q("#recLots"); if (!C){ box.innerHTML = `<p class="empty">Choisissez l'entité et le contrat.</p>`; return; }
+  const {lots, hors} = await listerLots();
+  const sans = lots.filter(l => !l.m).length; q("#recCntLots").textContent = (sans + (hors.length ? 1 : 0)) || "";
+  box.innerHTML = (hors.length ? `<div class="rec-lot" style="background:var(--warn-soft)"><span class="nom">${hors.length} fichier(s) hors lot à la racine de 02_RECEPTION</span><span class="small">${hors.slice(0, 6).map(x => e_(x.n)).join(", ")}${hors.length > 6 ? "…" : ""}</span><button type="button" class="btn small go" data-l="regrouper">Regrouper en lot…</button></div>` : "") +
+    (lots.length ? lots.map(l => {
+      const st = !l.m ? `<span class="state warn">Non inscrit</span>` : l.m.illisible ? `<span class="state bad">Manifeste illisible</span>` : l.m.statut === "Rejeté" ? `<span class="state bad">Rejeté</span>` : `<span class="state ok">Inscrit</span>`;
+      const info = l.m && !l.m.illisible ? `<span class="small muted">${e_(l.m.date_reception)} · ${e_(l.m.emetteur)} · ${(l.m.documents || []).length} doc. · reçu par ${e_(l.m.depose_par)}</span>` : "";
+      return `<div class="rec-lot" data-lot="${e_(l.n)}"><span class="nom">${e_(l.n)}</span>${st}${info}
+        <button type="button" class="ico" data-l="chemin">Chemin</button>
+        ${!l.m ? `<button type="button" class="btn small go" data-l="inscrire">Inscrire ce dossier</button>` : ""}
+        ${l.m && !l.m.illisible && l.m.statut !== "Rejeté" ? `<button type="button" class="btn small" data-l="rejeter">Rejeter le lot</button>` : ""}</div>`;
+    }).join("") : `<p class="empty">Aucun lot de réception.</p>`);
+  box._lots = lots; box._hors = hors;
+}
+async function rejeterLot(nom){
+  const rows = await lireRegistre(), lr = rows.filter(r => r.Lot_Reception === nom);
+  const classes = lr.filter(r => r.Statut === "Classé" && !r.Destination.startsWith(RECEPTION.join("\\")));
+  if (classes.length) return msg(`Ce lot a déjà ${classes.length} document(s) classé(s) hors du lot (${classes.map(r => r.No).join(", ")}). Retirez ces lignes une à une si nécessaire; le lot ne peut pas être rejeté en bloc.`, "bad", true);
+  const motif = prompt(`Rejeter le lot « ${nom} » (${lr.length} document(s)) ?\nEx. doublon d'un envoi déjà reçu, envoi erroné, mauvais contrat.\nLes fichiers restent dans le dossier (vous pourrez le supprimer à la main).\n\nMotif (obligatoire) :`, "");
+  if (!motif?.trim()) return;
+  const user = q("#recUser").value.trim();
+  for (const r of lr){ r.Statut = "Rejeté"; r.Statut_fichier = ""; r.Remarques = [r.Remarques, `lot rejeté : ${motif.trim()}`].filter(Boolean).join(" · "); }
+  try {
+    const t = await lireTexte(C.h, [...RECEPTION, nom, MANIFESTE]); const m = JSON.parse(t);
+    m.statut = "Rejeté"; m.rejet = {motif: motif.trim(), par: user, le: maint()};
+    await ecrire(C.h, [...RECEPTION, nom, MANIFESTE], JSON.stringify(m, null, 2));
+    await ecrire(C.h, [...RECEPTION, nom, REJET_TXT], `Lot rejeté le ${maint()} par ${user || "?"}\r\nMotif : ${motif.trim()}\r\n`);
+  } catch(e){ return msg(`Rejet annulé : ${e_(e.message)}`, "bad", true); }
+  await ecrireRegistre(rows); await journal("Lot rejeté", `${nom} – ${motif.trim()}`);
+  msg(`Lot « ${e_(nom)} » rejeté (${lr.length} ligne(s)).`); await chargerRegistre(); await rendreLots();
+}
+async function inscrireDossier(l){
+  if ((pending.length || inscription) && !confirm("La liste de dépôt en cours sera vidée. Continuer ?")) return;
+  viderDepot();
+  inscription = {lot: l.n, dir: l.h};
+  for (const x of await inventaire(l.h)) if (x.rel !== MANIFESTE && x.rel !== REJET_TXT) ajouterItem({rel: x.rel, blob: await x.h.getFile(), origine: "déposé"});
+  const m = l.n.match(/^(\d{2})(\d{2})(\d{2})_([^_]+)_?(.*)$/);
+  if (m){ q("#recDate").value = `20${m[1]}-${m[2]}-${m[3]}`; q("#recEmetteur").value = m[4]; q("#recObjet").value = m[5].replace(/_/g, " "); }
+  ongletRec("depot"); majLot(); rendrePending();
+  msg(`Dossier « ${e_(l.n)} » chargé : vérifiez la date, l'émetteur et l'objet, puis « Enregistrer la réception ». Les fichiers ne seront pas recopiés ni renommés.`, "ok", true);
+}
+async function regrouper(hors){
+  if ((pending.length || inscription) && !confirm("La liste de dépôt en cours sera vidée. Continuer ?")) return;
+  viderDepot();
+  for (const x of hors) ajouterItem({rel: x.n, blob: await x.h.getFile(), origine: "déposé"});
+  aRetirerDeLaRacine = hors.map(x => x.n);
+  for (const it of pending.filter(i => ext(i.rel) === ".eml")) await analyserEml(it);
+  ongletRec("depot"); majLot(); rendrePending();
+  msg(`${hors.length} fichier(s) chargé(s). Inscrivez la date de réception, l'émetteur et l'objet, puis « Enregistrer la réception » : ils seront copiés dans un lot, puis retirés de la racine de 02_RECEPTION (confirmation demandée).`, "ok", true);
+}
+
+/* ===== Détection : type, discipline, identifiant, révision ===== */
+const mot = w => new RegExp(`(^|[^A-Z])${w}([^A-Z]|$)`);
+const D_MOTS = [["ARC", [/ARCHI/, mot("ARC"), mot("ARCH"), /^A[-_ ]?\d{2,}/]], ["STR", [/STRUCT/, mot("STR"), mot("STRUC"), /^S[-_ ]?\d{2,}/]], ["CIV", [/CIVIL/, mot("CIV"), /^C[-_ ]?\d{2,}/]],
+  ["GEO", [/GEOMET/, /ARPENT/, mot("GEO"), /CERTIFICAT/, /LOCALISATION/, /COPIE_?CONFORME/]], ["MEC", [/MECANI/, mot("MEC"), mot("MECA"), /^M[-_ ]?\d{2,}/]]];
+const RE_NDA = /^([A-Z]{2}\d{4}-(?:PRE|CON|TQC)-[A-Z0-9_]+-[A-Z]{2,4}-[A-Z]{2,4}-[A-Z0-9]{1,4}-\d{2,4})-([0-9A-Z]{1,3})$/;
+const RE_REV = /(?:^|[ _.\-])(?:REVISION|REV|R)[ _.\-]?(\d{1,3}|[A-Z])$/;
+function detecter(rel){
+  const nom = nomDe(rel), x = ext(nom), b = base(nom), B = sansAccent(b).toUpperCase().replace(/[()\[\]]/g, " ").trim(), CH = sansAccent(rel).toUpperCase();
+  let type;
+  if (EXT_SUPPORT.includes(x)) type = "Fichier de soutien";
+  else if (x === ".eml" || x === ".msg") type = "Courriel";
+  else if (x === ".zip") type = "Archive zip";
+  else if (/(^|[^A-Z])DMT[-_ ]?\d+/.test(B)) type = "DMT";
+  else if (EXT_IMG.includes(x)) type = "Photo / image";
+  else if (EXT_3D.includes(x)) type = "Modèle 3D";
+  else if (x === ".dwg" || x === ".dxf") type = /IMPLANT|(^|[^A-Z])IMPL([^A-Z]|$)|POINTS?([^A-Z]|$)/.test(B) ? "Fichier d'implantation" : /(^|[^A-Z0-9])3D([^A-Z0-9]|$)|MODELE|SURFACE/.test(B) ? "Modèle 3D" : "Plan DWG/DXF";
+  else if (EXT_PTS.includes(x)) type = /STATION|RESEAU|REPERE|CONTROLE|CTRL/.test(B) ? "Réseau de stations" : "Fichier d'implantation";
+  else if (x === ".pdf") type = (/PLAN|FEUILLET|DESSIN|COUPE|DETAIL|ELEVATION|^[A-Z]{1,4}[-_ ]?\d{2,}/.test(B) || /(^|\/)(PDF|PLANS?)[_ /]/.test(CH)) ? "Plan PDF" : "Document divers";
+  else type = "Document divers";
+  let disc = "";
+  for (const [c, res] of D_MOTS) if (res.some(re => re.test(B))) { disc = c; break; }
+  if (!disc) for (const [c, res] of D_MOTS) if (res.slice(0, 3).some(re => re.test(CH.replace(/\.[A-Z0-9]+$/, "")))) { disc = c; break; }
+  let ident = "", rev = "", cle;
+  const nda = B.match(RE_NDA);
+  if (nda){ ident = `${nda[1]}-${nda[2]}`; rev = nda[2]; cle = nda[1]; }
+  else {
+    const m = B.match(RE_REV); let sans = B;
+    if (m && B.length - m[0].length >= 3){ rev = m[1]; sans = B.slice(0, B.length - m[0].length); }
+    cle = sans.replace(/[^A-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+    const dmt = B.match(/(?:^|[^A-Z])DMT[-_ ]?(\d+)/); if (dmt) ident = `DMT-${dmt[1].padStart(3, "0")}`;
+  }
+  return {type, disc, ident, rev, cle};
+}
+
+/* ===== Courriel .eml : en-têtes et pièces jointes ===== */
+const bin = s => { const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i) & 255; return u; };
+function deCs(u8, cs){ try { return new TextDecoder(String(cs || "utf-8").trim().toLowerCase().replace(/^(us-)?ascii$/, "utf-8")).decode(u8); } catch { return new TextDecoder("windows-1252").decode(u8); } }
+function mots2047(s){
+  return s.replace(/\?=\s+=\?/g, "?==?").replace(/=\?([^?]+)\?([BbQq])\?([^?]*)\?=/g, (m, cs, enc, t) => {
+    try { const u = /b/i.test(enc) ? bin(atob(t.replace(/\s/g, ""))) : bin(t.replace(/_/g, " ").replace(/=([0-9A-F]{2})/gi, (z, h) => String.fromCharCode(parseInt(h, 16)))); return deCs(u, cs.split("*")[0]); } catch { return m; }
+  });
+}
+function entetes(raw){
+  const h = {}; let cur = null;
+  for (const l of raw.split(/\r?\n/)){
+    if (/^[ \t]/.test(l) && cur){ h[cur] += " " + l.trim(); continue; }
+    const i = l.indexOf(":"); if (i < 1) continue; cur = l.slice(0, i).trim().toLowerCase(); if (!(cur in h)) h[cur] = l.slice(i + 1).trim(); else cur = "__dup";
+  }
+  for (const k in h) h[k] = mots2047(deCs(bin(h[k]), "utf-8"));
+  return h;
+}
+function param(v, nom){
+  if (!v) return "";
+  const ps = {}; for (const m of v.matchAll(/;\s*([^=;\s]+)\s*=\s*("(?:[^"\\]|\\.)*"|[^;]*)/g)) ps[m[1].toLowerCase()] = m[2].trim().replace(/^"|"$/g, "");
+  if (ps[nom]) return ps[nom];
+  const k = Object.keys(ps).filter(x => x === nom + "*" || x.startsWith(nom + "*")).sort((a, b) => (parseInt(a.split("*")[1]) || 0) - (parseInt(b.split("*")[1]) || 0));
+  if (!k.length) return "";
+  let cs = "utf-8", txt = "";
+  k.forEach((x, i) => { let val = ps[x]; if (x.endsWith("*")){ if (i === 0 && /^[^']*'[^']*'/.test(val)){ cs = val.split("'")[0] || "utf-8"; val = val.split("'").slice(2).join("'"); } txt += val.replace(/%([0-9A-F]{2})/gi, (z, h) => String.fromCharCode(parseInt(h, 16))); } else txt += val; });
+  return deCs(bin(txt), cs);
+}
+function corps(raw, cte){
+  cte = String(cte || "").toLowerCase();
+  if (cte.includes("base64")){ try { return bin(atob(raw.replace(/[^A-Za-z0-9+/=]/g, "").replace(/=+(?=[A-Za-z0-9+/])/g, ""))); } catch { return bin(raw); } }
+  if (cte.includes("quoted-printable")) return bin(raw.replace(/=\r?\n/g, "").replace(/=([0-9A-F]{2})/gi, (z, h) => String.fromCharCode(parseInt(h, 16))));
+  return bin(raw);
+}
+function parcourir(raw, out, ignInline, parentCt = ""){
+  const sep = raw.search(/\r?\n\r?\n/); const hr = sep < 0 ? raw : raw.slice(0, sep), body = sep < 0 ? "" : raw.slice(sep).replace(/^\r?\n\r?\n/, "");
+  const h = entetes(hr), ct = h["content-type"] || "text/plain", cd = h["content-disposition"] || "";
+  if (/^multipart\//i.test(ct)){
+    const bd = param(ct, "boundary"); if (!bd) return h;
+    const parts = body.split(new RegExp(`\\r?\\n?--${bd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:--)?[ \\t]*\\r?\\n?`));
+    for (const p of parts.slice(1)) if (p.trim()) parcourir(p, out, ignInline, ct);
+    return h;
+  }
+  let fn = param(cd, "filename") || param(ct, "name");
+  if (/^message\/rfc822/i.test(ct) && !/^inline/i.test(cd)){ out.push({nom: (fn || (entetes(body.split(/\r?\n\r?\n/)[0])["subject"] || "message") ) .replace(/[\\/:*?"<>|]+/g, "_").replace(/(\.eml)?$/i, ".eml"), u8: corps(body, h["content-transfer-encoding"])}); return h; }
+  if (!fn) return h;
+  const inline = /^inline/i.test(cd) || (!cd && h["content-id"]) || (/^multipart\/related/i.test(parentCt) && h["content-id"]);
+  if (ignInline && inline && /^image\//i.test(ct) && h["content-id"]) return h;
+  out.push({nom: fn.replace(/[\\/:*?"<>|]+/g, "_"), u8: corps(body, h["content-transfer-encoding"])});
+  return h;
+}
+async function analyserEml(it){
+  const raw = deCs(new Uint8Array(await it.blob.arrayBuffer()), "latin1"), pj = [];
+  let h; try { h = parcourir(raw, pj, q("#recSignature").checked); } catch(e){ it.note = `courriel non analysé (${e.message})`; return; }
+  const d = new Date(h.date || ""); const date = isNaN(d) ? "" : `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;
+  it.courriel = {de: h.from || "", a: h.to || "", date: h.date || "", objet: h.subject || ""};
+  it.note = `${pj.length} pièce(s) jointe(s) extraite(s)`;
+  const dossier = it.rel.includes("/") ? it.rel.slice(0, it.rel.lastIndexOf("/") + 1) : "";
+  for (const p of pj) ajouterItem({rel: dossier + p.nom, blob: new Blob([p.u8]), origine: `pièce jointe de ${nomDe(it.rel)}`, parent: it.id});
+  // champs de l'envoi proposés à partir du premier courriel
+  if (!q("#recDate").dataset.touche && date) q("#recDate").value = date;
+  if (!q("#recObjet").value && h.subject) q("#recObjet").value = h.subject.replace(/^((RE|TR|FW|FWD|RÉF)\s*:\s*)+/i, "").trim();
+  if (!q("#recEmetteur").value && h.from){
+    const dom = (h.from.match(/@([^>\s]+)/) || [])[1] || "", nomAff = h.from.replace(/<[^>]*>/, "").replace(/"/g, "").trim();
+    const CONNUS = {"transports.gouv.qc.ca": "MTQ", "mtq.gouv.qc.ca": "MTQ"};
+    const lab = CONNUS[dom.toLowerCase()] || dom.toLowerCase().replace(/(\.gouv)?\.(qc\.ca|gc\.ca|ca|com|net|org|qc)$/, "").replace(/\.gouv$/, "").split(".").pop();
+    q("#recEmetteur").value = /^(gmail|outlook|hotmail|yahoo|live|videotron|bell|icloud|sympatico)$/i.test(lab) ? nomAff : lab.toUpperCase();
+  }
+}
+
+/* ===== Zip : lecture sans bibliothèque externe (DecompressionStream) ===== */
+const CP437 = "ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀αßΓπΣσµτΦΘΩδ∞φε∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00a0";
+function nomZip(u8, utf){ if (utf) return new TextDecoder().decode(u8); try { return new TextDecoder("utf-8", {fatal: true}).decode(u8); } catch { return Array.from(u8, c => c < 128 ? String.fromCharCode(c) : CP437[c - 128]).join(""); } }
+async function lireZip(blob){
+  const buf = new Uint8Array(await blob.arrayBuffer()), dv = new DataView(buf.buffer, buf.byteOffset, buf.byteLength);
+  let eo = -1; for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50){ eo = i; break; }
+  if (eo < 0) throw new Error("archive zip illisible");
+  const n = dv.getUint16(eo + 10, true), off = dv.getUint32(eo + 16, true);
+  if (off === 0xFFFFFFFF || n === 0xFFFF) throw new Error("archive ZIP64 (très grande) non prise en charge : extrayez-la dans l'Explorateur et glissez le dossier");
+  const out = []; let p = off;
+  for (let k = 0; k < n; k++){
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error("répertoire du zip corrompu");
+    const fl = dv.getUint16(p + 8, true), me = dv.getUint16(p + 10, true), cs = dv.getUint32(p + 20, true), nl = dv.getUint16(p + 28, true), xl = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true), lo = dv.getUint32(p + 42, true);
+    const nom = nomZip(buf.subarray(p + 46, p + 46 + nl), fl & 0x800).replace(/\\/g, "/"); p += 46 + nl + xl + cl;
+    if (nom.endsWith("/")) continue;
+    if (fl & 1){ out.push({nom, err: "chiffré (mot de passe)"}); continue; }
+    const d0 = lo + 30 + dv.getUint16(lo + 26, true) + dv.getUint16(lo + 28, true);
+    out.push({nom, me, data: buf.subarray(d0, d0 + cs)});
+  }
+  return out;
+}
+async function decompresser(e){
+  if (e.me === 0) return new Blob([e.data]);
+  if (e.me === 8) return new Response(new Blob([e.data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).blob();
+  throw new Error(`compression ${e.me} non prise en charge`);
+}
+async function analyserZip(it){
+  let ent; try { ent = await lireZip(it.blob); } catch(e){ it.note = e.message; it.extraire = false; return; }
+  ent = ent.filter(e => !/(^|\/)__MACOSX\//.test(e.nom) && !IGNORER.includes(nomDe(e.nom).toLowerCase()));
+  const zb = base(nomDe(it.rel)), dossier = it.rel.includes("/") ? it.rel.slice(0, it.rel.lastIndexOf("/") + 1) : "";
+  const prefixeCommun = ent.length && ent.every(e => e.nom.startsWith(zb + "/")) ? zb.length + 1 : 0;  // évite ZIP/ZIP/…
+  let ko = 0;
+  for (const e of ent){
+    if (e.err){ ko++; continue; }
+    try { ajouterItem({rel: `${dossier}${zb}/${e.nom.slice(prefixeCommun)}`, blob: await decompresser(e), origine: `extrait de ${nomDe(it.rel)}`, parent: it.id}); } catch { ko++; }
+  }
+  it.extraire = true; it.note = `${ent.length - ko} fichier(s) dans l'archive${ko ? `, ${ko} illisible(s)` : ""}`;
+}
+
+/* ===== Liste de dépôt ===== */
+function ajouterItem(o){
+  const d = detecter(o.rel);
+  const it = {id: ++seq, inclure: true, taille: o.blob.size, ...d, ...o};
+  pending.push(it); return it;
+}
+async function ajouterFichiers(liste){   // liste : [{rel, blob}]
+  if (inscription) return msg("Une inscription de dossier existant est en cours : terminez-la ou videz la liste.", "warn");
+  if (!C) return msg("Choisissez d'abord l'entité et le contrat.", "bad");
+  const ajout = [];
+  for (const f of liste){ if (IGNORER.includes(nomDe(f.rel).toLowerCase())) continue; ajout.push(ajouterItem({rel: f.rel, blob: f.blob, origine: "déposé"})); }
+  for (const it of ajout){
+    if (it.type === "Courriel" && ext(it.rel) === ".eml") await analyserEml(it);
+    else if (it.type === "Courriel") it.note = "courriel Outlook (.msg) conservé tel quel : glissez aussi ses pièces jointes, ou enregistrez-le en .eml";
+    else if (it.type === "Archive zip") await analyserZip(it);
+  }
+  verifDoublons(); majLot(); rendrePending();
+}
+async function collecterDossier(h, prefix, out){
+  for await (const [n, x] of h.entries()){ if (x.kind === "file") out.push({rel: prefix + n, blob: await x.getFile()}); else await collecterDossier(x, prefix + n + "/", out); }
+  return out;
+}
+function relFinal(it){ return it.type === "Fichier de soutien" && !it.rel.startsWith(SUPPORT + "/") && !inscription ? `${SUPPORT}/${it.rel}` : it.rel; }
+function verifDoublons(){
+  for (const it of pending){
+    if (it.type === "Archive zip" && it.parent) { /* zip dans un zip : gardé tel quel */ }
+    const d = REG.find(r => r.Statut !== "Rejeté" && nomDe(r.Fichier).toLowerCase() === nomDe(it.rel).toLowerCase() && +r.Taille === it.taille);
+    const avant = it.doublon; it.doublon = d ? `déjà reçu : ${d.No}, lot ${d.Lot_Reception}` : "";
+    if (d && !avant && !inscription) it.inclure = false;   // doublon exact : exclu par défaut (leçon 52)
+  }
+}
+function visibles(){
+  const actifs = new Set(pending.filter(i => !(i.type === "Archive zip" && i.extraire === false)).map(i => i.id));
+  return pending.filter(i => !i.parent || (actifs.has(i.parent) && (pending.find(p => p.id === i.parent)?.inclure ?? true)));
+}
+function rendrePending(){
+  const box = q("#recPending"), v = visibles();
+  const total = v.filter(i => i.inclure);
+  q("#recDeposer").disabled = !C || !total.length;
+  if (!pending.length){ box.innerHTML = inscription ? "" : `<p class="small muted" style="margin:10px 0 0">Aucun fichier. Un envoi = un lot de réception : le courriel et toutes ses pièces, ou tous les fichiers d'un même transfert.</p>`; return; }
+  const optT = cur => TYPES.map(t => `<option ${t.t === cur ? "selected" : ""}>${e_(t.t)}</option>`).join("");
+  const optD = cur => `<option value="">—</option>` + DISC.map(d => `<option value="${d.c}" ${d.c === cur ? "selected" : ""}>${d.c}</option>`).join("");
+  const parType = {}; total.forEach(i => parType[i.type] = (parType[i.type] || 0) + 1);
+  box.innerHTML = `${inscription ? `<p class="msg ok" style="margin:10px 0 0">Inscription du dossier existant <b>${e_(inscription.lot)}</b> (sans recopie).</p>` : ""}
+    <div class="chips" style="margin-top:10px">${Object.entries(parType).map(([t, n]) => `<span class="chip">${n} ${e_(t)}</span>`).join("")}<span class="chip">${taille(total.reduce((s, i) => s + i.taille, 0))}</span></div>
+    <div class="tablewrap"><table><thead><tr><th></th><th>Fichier dans le lot</th><th>Taille</th><th>Type proposé</th><th>Disc.</th><th>Rév.</th><th>Remarque</th></tr></thead><tbody>` +
+    v.map(i => `<tr data-id="${i.id}" class="${i.inclure ? "" : "exclu"} ${i.parent ? "enfant" : ""}">
+      <td class="ctl"><input type="checkbox" class="inc" ${i.inclure ? "checked" : ""} title="Inclure dans le lot"></td>
+      <td class="fich">${e_(relFinal(i))}${i.origine !== "déposé" ? `<br><span class="small muted">${e_(i.origine)}</span>` : ""}</td>
+      <td>${taille(i.taille)}</td>
+      <td class="ctl"><select class="ty">${optT(i.type)}</select></td>
+      <td class="ctl">${typeDe(i.type).disc ? `<select class="di">${optD(i.disc)}</select>` : ""}</td>
+      <td>${e_(i.rev)}</td>
+      <td class="wrap small">${i.type === "Archive zip" && !i.parent && !String(i.note || "").includes("non prise") && !String(i.note || "").includes("illisible") ? `<label class="ctl" style="font-weight:600"><input type="checkbox" class="ext" ${i.extraire ? "checked" : ""}> Extraire</label> · ` : ""}${e_(i.note || "")}${i.doublon ? ` <span style="color:var(--warn);font-weight:600">${e_(i.doublon)}</span>` : ""}</td></tr>`).join("") + `</tbody></table></div>`;
+}
+function majLot(){
+  const d = q("#recDate").value, em = propre(q("#recEmetteur").value, 20), ob = propre(q("#recObjet").value, 40);
+  q("#recLotNom").innerHTML = inscription ? `Dossier du lot : <code>${RECEPTION.join("\\")}\\${e_(inscription.lot)}</code> (nom conservé)`
+    : (d && em) ? `Dossier du lot : <code>${RECEPTION.join("\\")}\\${e_(nomLot())}</code>` : `<span class="muted">Le nom du lot (AAMMJJ_EMETTEUR_OBJET) s'affichera ici.</span>`;
+}
+const nomLot = () => [q("#recDate").value.replace(/-/g, "").slice(2), propre(q("#recEmetteur").value, 20), propre(q("#recObjet").value, 40)].filter(Boolean).join("_");
+function viderDepot(){
+  pending = []; inscription = null; aRetirerDeLaRacine = [];
+  q("#recDate").value = ajd(); delete q("#recDate").dataset.touche; q("#recEmetteur").value = q("#recObjet").value = q("#recRemarque").value = "";
+  q("#recLog").textContent = ""; majLot(); rendrePending();
+}
+function progres(t, v, max){ const b = q("#recProgres"); b.hidden = !t; if (t){ q("#recProgresTxt").textContent = t; q("#recProgresBar").max = max || 1; q("#recProgresBar").value = v || 0; } }
+
+/* ===== Enregistrer la réception ===== */
+async function deposer(){
+  const user = q("#recUser").value.trim(), date = q("#recDate").value, emet = q("#recEmetteur").value.trim(), objet = q("#recObjet").value.trim();
+  const manque = [!C && "le contrat", !user && "votre nom", !date && "la date de réception", !emet && "l'émetteur", !objet && !inscription && "l'objet"].filter(Boolean);
+  if (manque.length) return msg(`À remplir : ${manque.join(", ")}.`, "bad", true);
+  if (date > ajd()) return msg("La date de réception est dans le futur.", "bad", true);
+  const items = visibles().filter(i => i.inclure);
+  const rels = new Set();
+  for (const i of items){ let r = relFinal(i), k = 2; const b0 = base(r), x0 = ext(r); while (rels.has(r.toLowerCase())) r = `${b0} (${k++})${x0}`; i.relLot = r; rels.add(r.toLowerCase()); }
+  const auLot = document.querySelector('input[name="recAuLot"]:checked').value === "lot";
+  let lot = inscription ? inscription.lot : nomLot();
+  try { await dirH(C.h, RECEPTION, true); } catch(e){ return msg(`Impossible de créer ${RECEPTION.join("\\")} : ${e_(e.message)}`, "bad", true); }
+  if (!inscription){ let k = 2; const l0 = lot; while (await (async () => { try { await dirH(C.h, [...RECEPTION, lot]); return true; } catch { return false; } })()) lot = `${l0}_${k++}`; }
+  const nDoub = items.filter(i => i.doublon).length;
+  if (!confirm(`Enregistrer la réception dans le contrat ${C.nom} ?\n\nLot : ${RECEPTION.join("\\")}\\${lot}\n${items.length} document(s) inscrit(s) au registre${nDoub ? ` (dont ${nDoub} déjà reçu(s) ailleurs)` : ""}.\nReçu le ${date} de ${emet}.`)) return;
+  q("#recDeposer").disabled = true;
+  const lotDir = await dirH(C.h, [...RECEPTION, lot], true);
+  const [rows, ret] = [await lireRegistre(), await lireRetires()], no = prochainNo(rows, ret);
+  const m = {module: "M-003", version: VERSION, lot, contrat: C.nom, entite: E.cle, date_reception: date, emetteur: emet, objet, remarque: q("#recRemarque").value.trim(),
+    depose_par: user, depose_le: maint(), statut: "Reçu", inscription_sur_place: !!inscription, courriels: pending.filter(i => i.courriel).map(i => ({fichier: i.relLot || i.rel, ...i.courriel})), documents: []};
+  let n = 0;
+  try {
+    for (const i of items){
+      progres(`Écriture ${++n}/${items.length} : ${nomDe(i.relLot)}`, n, items.length);
+      if (!inscription) await ecrire(lotDir, i.relLot.split("/"), i.blob);
+      const st = aClasserParDefaut(i.type) || !auLot ? "À classer" : "Classé";
+      m.documents.push({no: no(), fichier: i.relLot, taille: i.taille, type: i.type, discipline: i.disc, identifiant: i.ident, revision: i.rev, cle: i.cle, origine: i.origine,
+        statut: st, statut_fichier: "VV", destination: st === "Classé" ? [...RECEPTION, lot, ...i.relLot.split("/")].join("\\") : "", remarque: i.doublon || "", ...(st === "Classé" ? {classe_par: user, classe_le: maint()} : {})});
+    }
+    await ecrire(lotDir, [MANIFESTE], JSON.stringify(m, null, 2));
+  } catch(e){
+    progres(""); q("#recDeposer").disabled = false;
+    return msg(`Le dépôt s'est arrêté (${e_(e.message)}). ${n - 1} fichier(s) écrit(s) dans ${e_(lot)}. Corrigez la cause, puis « Lots de réception » → « Inscrire ce dossier » pour l'inscrire tel quel, ou supprimez ce dossier et recommencez.`, "bad", true);
+  }
+  progres("");
+  rows.push(...m.documents.map(d => ligneDe(m, d)));
+  const resume = `Lot ${lot} : ${items.length} document(s) inscrit(s), ${m.documents.filter(d => d.statut === "À classer").length} à classer.`;
+  const ok = await ecrireRegistre(rows, resume);
+  await journal(inscription ? "Inscription d'un dossier existant" : "Réception", `${lot} – ${items.length} doc. – ${emet} – ${objet}`);
+  journalUi("#recLog", resume);
+  if (aRetirerDeLaRacine.length && confirm(`Les ${aRetirerDeLaRacine.length} fichier(s) hors lot sont maintenant copiés dans ${lot}.\nLes retirer de la racine de 02_RECEPTION ?`)){
+    const rec = await dirH(C.h, RECEPTION); let r = 0;
+    for (const f of aRetirerDeLaRacine){ try { await rec.removeEntry(f); r++; } catch {} }
+    journalUi("#recLog", `${r} fichier(s) retiré(s) de la racine de 02_RECEPTION.`); await journal("Regroupement hors lot", `${r} fichier(s) déplacé(s) dans ${lot}`);
+  }
+  if (ok) msg(`${e_(resume)} <button type="button" class="btn small" data-goto-rec="registre">Voir le registre</button>`, "ok", true);
+  viderDepot(); await chargerRegistre(); await rendreLots();
+}
+
+/* ===== Interface ===== */
+function ongletRec(t){
+  document.querySelectorAll(".subnav [data-rtab]").forEach(b => b.setAttribute("aria-selected", b.dataset.rtab === t));
+  document.querySelectorAll("[data-rec]").forEach(p => p.hidden = p.dataset.rec !== t);
+  if (t === "lots" && C) rendreLots();
+}
+let initFait = false;
+function ouvert(){
+  if (initFait) return; initFait = true;
+  const ent = lsGet("m003.entite"); q("#recRodage").checked = !!lsGet("m003.rodage");
+  if (ent) choisirEntite(ent);
+}
+function init(){
+  q("#recVersion").textContent = `${VERSION} (${VDATE})`;
+  q("#recUser").value = lsGet("m003.user"); q("#recUser").onchange = e => lsSet("m003.user", e.target.value.trim());
+  q("#recDate").value = ajd(); q("#recDate").oninput = () => { q("#recDate").dataset.touche = "1"; majLot(); };
+  ["recEmetteur", "recObjet"].forEach(id => q("#" + id).oninput = majLot);
+  q("#recFType").innerHTML += TYPES.map(t => `<option>${e_(t.t)}</option>`).join("");
+  q("#recFDisc").innerHTML += DISC.map(d => `<option value="${d.c}">${d.c} – ${d.n}</option>`).join("");
+  document.querySelectorAll(".ent").forEach(b => b.onclick = () => choisirEntite(b.dataset.ent));
+  q("#recRodage").onchange = () => E.cle && choisirEntite(E.cle);
+  q("#recContrat").onchange = e => choisirContrat(e.target.value);
+  document.querySelectorAll(".subnav [data-rtab]").forEach(b => b.onclick = () => ongletRec(b.dataset.rtab));
+  document.addEventListener("click", ev => {
+    const c = ev.target.closest("[data-copier]"); if (c && c.closest('[data-panel="reception"]')) copier(c.dataset.copier);
+    const g = ev.target.closest("[data-goto-rec]"); if (g) ongletRec(g.dataset.gotoRec);
+  });
+  // dépôt
+  const drop = q("#recDrop");
+  drop.onclick = () => q("#recFiles").click();
+  drop.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); q("#recFiles").click(); } };
+  q("#recFiles").onchange = e => { ajouterFichiers([...e.target.files].map(f => ({rel: f.name, blob: f}))); e.target.value = ""; };
+  q("#recAjDossier").onclick = async () => { try { const h = await showDirectoryPicker({id: "m003-source"}); ajouterFichiers(await collecterDossier(h, h.name + "/", [])); } catch(e){ if (e.name !== "AbortError") msg(e_(e.message), "bad"); } };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = async e => {
+    e.preventDefault(); drop.classList.remove("over");
+    const its = [...e.dataTransfer.items].filter(i => i.kind === "file"), out = [];
+    const hs = await Promise.all(its.map(i => i.getAsFileSystemHandle ? i.getAsFileSystemHandle() : null));
+    for (let k = 0; k < its.length; k++){
+      const h = hs[k];
+      if (h && h.kind === "directory") await collecterDossier(h, h.name + "/", out);
+      else { const f = h ? await h.getFile() : its[k].getAsFile(); if (f) out.push({rel: f.name, blob: f}); }
+    }
+    ajouterFichiers(out);
+  };
+  q("#recPending").addEventListener("change", ev => {
+    const tr = ev.target.closest("tr[data-id]"); if (!tr) return; const it = pending.find(i => i.id === +tr.dataset.id);
+    if (ev.target.classList.contains("inc")) it.inclure = ev.target.checked;
+    if (ev.target.classList.contains("ext")) it.extraire = ev.target.checked;
+    if (ev.target.classList.contains("ty")) it.type = ev.target.value;
+    if (ev.target.classList.contains("di")) it.disc = ev.target.value;
+    rendrePending();
+  });
+  q("#recDeposer").onclick = deposer;
+  q("#recVider").onclick = () => { viderDepot(); msg(""); };
+  // registre
+  ["recFStatut", "recFType", "recFDisc", "recFVigueur"].forEach(id => q("#" + id).onchange = rendreRegistre);
+  q("#recFTexte").oninput = rendreRegistre;
+  q("#recRecharger").onclick = () => C && chargerRegistre();
+  q("#recReindexer").onclick = reindexer;
+  q("#recCopierRegistre").onclick = () => C && copier(complet(REGISTRE));
+  q("#recClasser").onclick = classerSelection;
+  q("#recTable").addEventListener("change", ev => {
+    if (ev.target.id === "recTout"){ document.querySelectorAll("#recTable .sel").forEach(x => x.checked = ev.target.checked); return majSelection(); }
+    if (ev.target.classList.contains("sel")) return majSelection();
+    const k = ev.target.dataset.k; if (!k) return;
+    const no = ev.target.closest("tr").dataset.no, ed = (edits[no] ??= {});
+    ed[k] = (k === "Type" || k === "Discipline") ? ev.target.value : ev.target.value.trim().toUpperCase();
+    // un identifiant NDA-001 saisi devient la clé de comparaison des révisions (sans le champ REV)
+    if (k === "Identifiant"){ const m = ed.Identifiant.match(RE_NDA); if (m){ ed.Cle = m[1]; ed.Revision = ed.Revision || m[2]; } else delete ed.Cle; }
+    const sel = [...document.querySelectorAll("#recTable .sel:checked")].map(x => x.closest("tr").dataset.no);
+    rendreRegistre(); document.querySelectorAll("#recTable tr[data-no]").forEach(tr => { if (sel.includes(tr.dataset.no)) { const c = tr.querySelector(".sel"); if (c) c.checked = true; } }); majSelection();
+  });
+  q("#recTable").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-a]"); if (!b) return; const r = REG.find(x => x.No === b.closest("tr").dataset.no); if (!r) return;
+    ({ouvrir: () => ouvrirDoc(r), chemin: () => copier(complet(partsFichier(r)), `Chemin complet copié : <code>${e_(complet(partsFichier(r)))}</code>`), dossier: () => ouvrirDossier(r), retirer: () => retirer(r.No)})[b.dataset.a]();
+  });
+  // lots
+  q("#recLots").addEventListener("click", ev => {
+    const b = ev.target.closest("[data-l]"); if (!b) return; const box = q("#recLots");
+    if (b.dataset.l === "regrouper") return regrouper(box._hors);
+    const l = box._lots.find(x => x.n === b.closest("[data-lot]").dataset.lot);
+    if (b.dataset.l === "chemin") copier(complet([...RECEPTION, l.n]));
+    if (b.dataset.l === "inscrire") inscrireDossier(l);
+    if (b.dataset.l === "rejeter") rejeterLot(l.n);
+  });
+  rendrePending(); majLot(); rendreRegistre();
+  if (!("showDirectoryPicker" in window)) document.querySelectorAll('[data-panel="reception"] button').forEach(b => b.disabled = true);
+}
+init();
+window.M003 = {ouvert, detecter, version: VERSION, refCharge: () => { if (initFait && E.cle && !E.chemin) choisirEntite(E.cle); }};
+if (!q('[data-panel="reception"]').hidden) ouvert();
+})();
 </script>
 </body>
 </html>
