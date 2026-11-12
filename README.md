@@ -1,58 +1,13 @@
-# Boîte à outils – Arpent-Nord et MECATECH Arpentage
+# Livraison — Documentation du contrat (M-005) v0.1 · 2026-11-12
 
-Page d'accueil unique des applications des arpenteurs : **https://arpent-nord.github.io/**
+Contenu à téléverser dans le dépôt `arpent-nord.github.io` (Add file → Upload files, glisser le **contenu** du zip, Commit, Ctrl+F5) :
 
-La boîte à outils sert les deux entités, Arpent-Nord construction et MECATECH Arpentage. Elles sont régies par les mêmes méthodes (norme NDA-001) et ont la même arborescence de projets.
-
-## Contenu du dépôt
-
-Ce dépôt contient la page d'accueil et les modules du système de gestion des contrats. Les autres outils ont chacun leur propre dépôt public.
-
-| Chemin | Rôle |
+| Fichier | Action |
 |---|---|
-| `/index.html` | Accueil : menu des outils, bandeau du jour (nom de levé et de point) |
-| `/gestion-leves/` | Gestion des levés (calculateur) : boîte de dépôt, répartition, index, contrats, bilan |
-| `/gestion-leves/#depot-leves` | Dépôt des levés (arpenteur), présenté à part dans l'accueil |
-| `/gestion-leves/lib/` | Bibliothèque heic-to (conversion des photos iPhone) et sa licence |
-| `/admin/` | Administration des contrats : codes arpenteurs (depuis Monday), tables de référence |
-| `/admin/#reception` | Réception des documents (M-003) : dépôt des envois reçus, registre des documents, classement et révisions |
-| `/docs/M003_RECEPTION_DOCUMENTS.md` | Cahier du module M-003 (formats du registre et du manifeste) |
-| `/voie-ferree/` | Menu des outils spécialisés de voie ferrée |
-| `logo-*.svg`, `logo-*.png` | Logos originaux des deux entités (voir « Logos ») |
+| `documentation/index.html` | nouveau : page Documentation du contrat |
+| `index.html` | accueil : carte « Documentation du contrat » et ligne dans « Quel outil prendre ? » |
+| `docs/CAHIER_M005.md` | cahier de l'application |
 
-## Outils dans d'autres dépôts
+⚠ `index.html` a été modifié à partir de la copie du 2026-11-09 (Renommage_applications\Etape_C_apres_renommage). Si l'accueil publié a changé depuis, ne téléversez pas ce fichier : ajoutez à la main, dans l'accueil publié, la carte `<article class="tool desk" id="t-doc">…</article>` (avant la carte des Fiches signalétiques) et la ligne `#t-doc` de « Quel outil prendre ? », copiées de ce fichier.
 
-| Outil | Ouvrir | Documentation |
-|---|---|---|
-| Pcodes et Liaisons | /APP-PCodes/ | github.com/Arpent-Nord/APP-PCodes |
-| Validation de levé | /APP-Validation-Leve/ | /APP-Validation-Leve/guide.html |
-| Contrôle d'implantation | /APP-Controle-Implantation/ | /APP-Controle-Implantation/guide.html |
-| GEDO REC – rapport de voie | /APP-Gedo-Rec/ | (voie ferrée) |
-| Vérification nez de quai | /APP-Verification-Nez-de-Quai/ | (voie ferrée) |
-
-## Règles communes à toutes les applications
-
-- **Aucune donnée de mandat** (plan, levé, nom de client) dans un dépôt public. Les fichiers restent sur l'appareil de l'utilisateur ou dans OneDrive / SharePoint.
-- **Bouton de retour** « ‹ Boîte à outils » dans l'en-tête de chaque application.
-- **Logos** : dans l'en-tête des modules, Arpent-Nord puis MECATECH. Dans les rapports et fiches d'un contrat, le logo de l'entité du contrat (AN → Arpent-Nord, MA → MECATECH). Les logos sont intégrés dans chaque page (WebP en base64) selon le standard des logos (v4).
-- **Numéro de version** et date dans le pied de page de chaque module, augmentés à chaque livraison.
-
-## Logos
-
-- `logo-mecatech_horizontal.svg` / `.png` (2400 px) : usage courant (en-têtes, rapports).
-- `logo-mecatech_vertical.svg` / `.png` (2400 px) : pages couvertures, papeterie, documents Word.
-- `logo-arpent-nord.svg` / `.png` (2400 px) : originaux tirés de `logo.ai`.
-
-## Publier une livraison
-
-1. Décompresser le zip de livraison sur le poste.
-2. Dans ce dépôt : **Add file → Upload files**, puis glisser le **contenu** du zip (dossiers et fichiers), jamais le zip lui-même.
-3. **Commit changes**, attendre 1 à 2 minutes, puis vérifier avec **Ctrl+F5** (deux fois sur téléphone si la page est installée).
-
-## Ajouter un outil
-
-1. Créer le dépôt public de l'outil et activer Pages (main / root), avec un `guide.html`.
-2. Copier une carte `<article class="tool">` dans `index.html` et changer le nom, la description et les liens.
-3. Ajouter une ligne dans « Quel outil prendre ? » et dans le tableau ci-dessus.
-4. Ajouter le bouton de retour et les logos, selon le standard des logos.
-
+Avant le rodage, dans Administration → Tables de référence (ou reference.json) : vérifier `sharepoint` ; facultatif `AN_RODAGE` pour tester au téléphone, `responsables_registres`.
